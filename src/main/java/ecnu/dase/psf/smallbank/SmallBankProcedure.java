@@ -82,6 +82,8 @@ public class SmallBankProcedure implements Callable<Long> {
                 break;
             case 6:
                 Commit();
+                break;
+            default:
         }
         return null;
     }

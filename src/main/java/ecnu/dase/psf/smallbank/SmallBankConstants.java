@@ -22,4 +22,9 @@ public abstract class SmallBankConstants {
     public static final int MAX_BALANCE = 50000;
     public static final int MIN_BALANCE = 10000;
 
+    /**
+     * EXECUTION CONFIG
+     */
+    public static  final int DEFAULT_THREAD = 4;
+
 }

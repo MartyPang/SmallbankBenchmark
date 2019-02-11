@@ -9,6 +9,7 @@ public class Vertex {
     private double weight_; // execution time
     private int inDegree;
     private int outDegree;
+    private int lowLink;
 
 
     public Vertex(int vId_) {
@@ -16,6 +17,7 @@ public class Vertex {
         edgeList_ = new LinkedList<>();
         visited_ = false;
         weight_ = 0.0;
+        lowLink = 0;
     }
 
     /**
@@ -102,6 +104,18 @@ public class Vertex {
         return neighbor;
     }
 
+    public Vertex getUnvisitedNeighbor() {
+        Vertex unNeighbor = null;
+        Iterator<Vertex> it = this.getNeighborIterator();
+        while(it.hasNext() && unNeighbor == null) {
+            Vertex next = it.next();
+            if(!next.isVisited()) {
+                unNeighbor = next;
+            }
+        }
+        return unNeighbor;
+    }
+
     public void removeNeighborById(int tranId) {
         if(getNeighborById(tranId) != null) {
             edgeList_.remove(new Edge(this, new Vertex(tranId), 0));
@@ -152,6 +166,23 @@ public class Vertex {
 
     public void setWeight_(double weight_) {
         this.weight_ = weight_;
+    }
+
+    public int getLowLink() {
+        return lowLink;
+    }
+
+    public void setLowLink(int lowLink) {
+        this.lowLink = lowLink;
+    }
+
+    public void printVertex() {
+        System.out.printf("Vertex %d: ", vId_);
+        Iterator<Vertex> it = this.getNeighborIterator();
+        while(it.hasNext()) {
+            System.out.print(it.next().getvId_() + " ");
+        }
+        System.out.print("\n");
     }
 
     @Override
