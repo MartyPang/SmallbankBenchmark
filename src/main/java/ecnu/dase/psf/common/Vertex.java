@@ -119,6 +119,7 @@ public class Vertex {
     public void removeNeighborById(int tranId) {
         if(getNeighborById(tranId) != null) {
             edgeList_.remove(new Edge(this, new Vertex(tranId), 0));
+            --outDegree;
         }
 
     }
@@ -129,6 +130,15 @@ public class Vertex {
         }
         else {
             ++outDegree;
+        }
+    }
+
+    public void decreaseDegreeByOne(boolean in) {
+        if(in) {
+            --inDegree;
+        }
+        else {
+            --outDegree;
         }
     }
 
@@ -174,6 +184,22 @@ public class Vertex {
 
     public void setLowLink(int lowLink) {
         this.lowLink = lowLink;
+    }
+
+    public int getInDegree() {
+        return inDegree;
+    }
+
+    public void setInDegree(int inDegree) {
+        this.inDegree = inDegree;
+    }
+
+    public int getOutDegree() {
+        return outDegree;
+    }
+
+    public void setOutDegree(int outDegree) {
+        this.outDegree = outDegree;
     }
 
     public void printVertex() {

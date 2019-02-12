@@ -19,7 +19,7 @@ public class TarjanSCC {
     /**
      * Store all found SCC
      */
-    private List<Map<Integer, Vertex>> scc;
+    private List<DirectedGraph> scc;
 
     /**
      * Access order
@@ -32,7 +32,7 @@ public class TarjanSCC {
         ts = 0;
     }
 
-    public void runTarjan(ConflictGraph graph) {
+    public void runTarjan(DirectedGraph graph) {
         Collection<Vertex> vertices = graph.getVertices().values();
         for(Vertex v : vertices) {
             if(!v.isVisited()) {
@@ -77,21 +77,22 @@ public class TarjanSCC {
                     break;
                 }
             }
-            scc.add(component);
+            DirectedGraph dg = new DirectedGraph(component);
+            scc.add(dg);
         }
     }
 
     public void printSCC() {
-        for(Map<Integer, Vertex> component : scc) {
-            System.out.println(component.values());
+        for(DirectedGraph component : scc) {
+            System.out.println(component.getVertices().values());
         }
     }
 
-    public List<Map<Integer, Vertex>> getScc() {
+    public List<DirectedGraph> getScc() {
         return scc;
     }
 
-    public void setScc(List<Map<Integer, Vertex>> scc) {
+    public void setScc(List<DirectedGraph> scc) {
         this.scc = scc;
     }
 }

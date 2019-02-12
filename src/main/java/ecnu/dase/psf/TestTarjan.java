@@ -1,6 +1,6 @@
 package ecnu.dase.psf;
 
-import ecnu.dase.psf.concurrencycontrol.ConflictGraph;
+import ecnu.dase.psf.concurrencycontrol.DirectedGraph;
 import ecnu.dase.psf.concurrencycontrol.TarjanSCC;
 
 import java.util.Stack;
@@ -13,7 +13,7 @@ import java.util.Stack;
 public class TestTarjan {
     public static void main(String[] args) {
         //construct a directed graph
-        ConflictGraph cg = new ConflictGraph();
+        DirectedGraph cg = new DirectedGraph();
         cg.addVertex(1);
         cg.addVertex(2);
         cg.addVertex(3);

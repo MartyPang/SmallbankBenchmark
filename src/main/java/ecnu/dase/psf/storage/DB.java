@@ -30,10 +30,12 @@ public class DB {
         return value;
     }
 
-    public void putState(String table, int acc, int value) {
+    public void putState(int writtenBy, String table, int acc, int value) {
         if(table.equals(SmallBankConstants.SAVINGS_TAB)) {
+            saving_[acc].setWrittenBy_(writtenBy);
             saving_[acc].setValue_(value);
         }else if(table.equals(SmallBankConstants.CHECKINGS_TAB)) {
+            checking_[acc].setWrittenBy_(writtenBy);
             checking_[acc].setValue_(value);
         }
     }

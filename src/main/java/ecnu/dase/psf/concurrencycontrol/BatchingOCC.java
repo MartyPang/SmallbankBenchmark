@@ -2,63 +2,37 @@ package ecnu.dase.psf.concurrencycontrol;
 
 import ecnu.dase.psf.common.Item;
 import ecnu.dase.psf.common.Vertex;
-import ecnu.dase.psf.smallbank.SmallBankConstants;
 import ecnu.dase.psf.smallbank.SmallBankProcedure;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 public class BatchingOCC {
     private int nValidation; // num of transactions request validation
     private int nCommit; // num of transactions committed
+    /**
+     * Transaction Dependency Graph
+     */
+    private DirectedGraph tdg;
 
-    private ExecutorService pool;
     private TarjanSCC tarjan;
 
     public BatchingOCC() {
         nValidation = 0;
         nCommit = 0;
-        pool = Executors.newFixedThreadPool(SmallBankConstants.DEFAULT_THREAD);
+        tdg = new DirectedGraph();
         tarjan = new TarjanSCC();
     }
 
-    public BatchingOCC(int thread_num) {
-        nValidation = 0;
-        nCommit = 0;
-        pool = Executors.newFixedThreadPool(thread_num);
-        tarjan = new TarjanSCC();
-    }
-
-    public void executeParallel(List<SmallBankProcedure> txs) {
-        List<Future<Long>> futureList = new ArrayList<>();
-
-        try{
-            futureList = pool.invokeAll(txs, 1, TimeUnit.MINUTES);
-            for(Future<Long> f : futureList) {
-                Long execution_time = f.get();
-                //TODO - Set up the weigh of transactions
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public ConflictGraph constructCG(List<SmallBankProcedure> txs) {
-        ConflictGraph cg = new ConflictGraph();
+    public DirectedGraph constructConflictGraph(Map<Integer, SmallBankProcedure> txs) {
+        DirectedGraph cg = new DirectedGraph();
         // Add vertex for each transaction
-        for(SmallBankProcedure tx : txs) {
+        for(SmallBankProcedure tx : txs.values()) {
             cg.addVertex(tx.getTranId_());
         }
         Map<Integer, Vertex> vertices = cg.getVertices();
-        for(SmallBankProcedure tx : txs) {
+        for(SmallBankProcedure tx : txs.values()) {
             Map<String, Item> writeSet = tx.getWriteSet_();
-            for(SmallBankProcedure otherTx : txs) {
+            for(SmallBankProcedure otherTx : txs.values()) {
                 if(tx.equals(otherTx)) { //compare with other transaction's read set
                     continue;
                 }
@@ -101,30 +75,94 @@ public class BatchingOCC {
         return conflict;
     }
 
-    public List<Integer> findAbortTransactionSet(ConflictGraph cg) {
+    public List<Integer> findAbortTransactionSet(DirectedGraph cg) {
         List<Integer> txSet = new ArrayList<>();
         //Get all SCCs using Tarjan's algorithm
         tarjan.runTarjan(cg);
-        List<Map<Integer, Vertex>> scc = tarjan.getScc();
+        List<DirectedGraph> scc = tarjan.getScc();
+        //Need to copy scc and remove irrelevant edges
+        List<DirectedGraph> copySCC = new ArrayList<>();
+        for(DirectedGraph component : scc) {
+            DirectedGraph copyComponent = new DirectedGraph();
+            //Add vertices
+            for(Integer vid : component.getVertexIdSet()) {
+                copyComponent.addVertex(vid);
+            }
+            Iterator<Vertex> it = component.getVertices().values().iterator();
+            while(it.hasNext()) {
+                Vertex next = it.next();
+                Iterator<Vertex> neighbors = next.getNeighborIterator();
+                while (neighbors.hasNext()) {
+                    //Only need to add relevant edges
+                    Vertex relevant = neighbors.next();
+                    if(component.getVertexIdSet().contains(relevant.getvId_())) {
+                        copyComponent.addEdge(next.getvId_(), relevant.getvId_());
+                    }
+                }
+            }
+            copySCC.add(copyComponent);
+        }
         //Run greedy select algorithm
-        for(Map<Integer, Vertex> component : scc) {
+        for(DirectedGraph component : copySCC) {
             txSet.addAll(greedySelectVertex(component));
         }
         return txSet;
     }
 
-    private List<Integer> greedySelectVertex(Map<Integer, Vertex> component) {
+    private List<Integer> greedySelectVertex(DirectedGraph component) {
         List<Integer> v = new ArrayList<>();
-        if(component.size() <= 1) {
+        if(component.getGraphSize() <= 1) {
             return v;
         }
         //Choose vertex to abort by strategy
-
+        //Here we select one with minimal out-degree
+        int min = Integer.MAX_VALUE;
+        int minVid = 0;
+        Iterator<Vertex> it = component.getVertices().values().iterator();
+        while(it.hasNext()) {
+            Vertex next = it.next();
+            if(next.getOutDegree() < min) {
+                min = next.getOutDegree();
+                minVid = next.getvId_();
+            }
+        }
         //Remove abort vertex from component,
         //Trim vertex with no incoming or outgoing edge,
         //And run a greedySelectVertex with remaining graph
-
+        component.removeVertex(minVid);
+        component.trimGraph();
+        v.addAll(greedySelectVertex(component));
         return v;
     }
 
+    public void commitTransaction(SmallBankProcedure tx) {
+        tx.Commit();
+        ++nCommit;
+        //add a new vertex to tdg
+        tdg.addVertex(tx.getTranId_());
+        //update edges
+        Map<String, Item> readSet = tx.getReadSet_();
+        Collection<Item> values = readSet.values();
+        for(Item item : values) {
+            if(tdg.getVertexIdSet().contains(item.getWrittenBy_())) {
+                tdg.addEdge(item.getWrittenBy_(), tx.getTranId_());
+            }
+        }
+    }
+
+    public int getnCommit() {
+        return nCommit;
+    }
+
+    public void setnCommit(int nCommit) {
+        this.nCommit = nCommit;
+    }
+
+    public DirectedGraph getTdg() {
+        return tdg;
+    }
+
+    public void setTdg(DirectedGraph tdg) {
+        this.tdg = tdg;
+    }
 }

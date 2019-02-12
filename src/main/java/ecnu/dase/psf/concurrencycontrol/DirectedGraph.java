@@ -4,13 +4,17 @@ import ecnu.dase.psf.common.Vertex;
 
 import java.util.*;
 
-public class ConflictGraph {
+public class DirectedGraph {
     private Map<Integer, Vertex> vertices;
     private int edgeCount; // number of edges in graph
 
-    public ConflictGraph() {
+    public DirectedGraph() {
         vertices = new HashMap<>();
         edgeCount = 0;
+    }
+
+    public DirectedGraph(Map<Integer, Vertex> dg) {
+        vertices = dg;
     }
 
     public void addVertex(int tranId) {
@@ -39,11 +43,45 @@ public class ConflictGraph {
         Iterator<Vertex> it = vertices.values().iterator();
         while(it.hasNext()) {
             Vertex next = it.next();
-            if(next.getvId_() != vId) { //remove incoming edges of vId
+            //remove incoming edges of vId
+            if(next.getvId_() != vId) {
                 next.removeNeighborById(vId);
             }
+            //remove outgoing edges of vId
+            else {
+                Iterator<Vertex> neighbors = next.getNeighborIterator();
+                while(neighbors.hasNext()) {
+                    //Decrease in-degree by one
+                    neighbors.next().decreaseDegreeByOne(true);
+                }
+            }
         }
-        vertices.remove(vId); // remove vId itself
+        // remove vId itself
+        vertices.remove(vId);
+    }
+
+    /**
+     * Trim vertex with no incoming/outgoing edges recursively.
+     */
+    public void trimGraph() {
+        Vertex trimmedV = getNextTrimVertex();
+        if(trimmedV != null) {
+            removeVertex(trimmedV.getvId_());
+            trimGraph();
+        }
+    }
+
+    private Vertex getNextTrimVertex() {
+        Vertex vertex = null;
+        Iterator<Vertex> it = vertices.values().iterator();
+        boolean found = false;
+        while(!found && it.hasNext()) {
+            vertex = it.next();
+            if(vertex.getOutDegree() == 0 || vertex.getInDegree() == 0) {
+                found = true;
+            }
+        }
+        return vertex;
     }
 
     /**
@@ -85,6 +123,14 @@ public class ConflictGraph {
         return vertex;
     }
 
+    public Collection<Integer> getVertexIdSet() {
+        return vertices.keySet();
+    }
+
+    public int getGraphSize() {
+        return vertices.size();
+    }
+
     public Map<Integer, Vertex> getVertices() {
         return vertices;
     }
@@ -106,5 +152,13 @@ public class ConflictGraph {
             Vertex v = it.next();
             v.unVisit();
         }
+    }
+
+    public int getEdgeCount() {
+        return edgeCount;
+    }
+
+    public void setEdgeCount(int edgeCount) {
+        this.edgeCount = edgeCount;
     }
 }

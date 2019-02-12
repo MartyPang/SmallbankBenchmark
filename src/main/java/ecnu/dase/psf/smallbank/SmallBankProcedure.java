@@ -1,7 +1,6 @@
 package ecnu.dase.psf.smallbank;
 
 import ecnu.dase.psf.common.Item;
-import ecnu.dase.psf.concurrencycontrol.BatchingOCC;
 import ecnu.dase.psf.storage.DB;
 
 import java.util.HashMap;
@@ -13,7 +12,7 @@ public class SmallBankProcedure implements Callable<Long> {
     /**
      * Batching OCC protocol
      */
-    BatchingOCC bOCC_;
+    //BatchingOCC bOCC_;
     /**
      * simulated state database
      */
@@ -48,9 +47,8 @@ public class SmallBankProcedure implements Callable<Long> {
 
 
 
-    public SmallBankProcedure(BatchingOCC bOCC, DB db, int tranId) {
+    public SmallBankProcedure(DB db, int tranId) {
         //global variables
-        bOCC_ = bOCC;
         db_ = db;
         tranId_ = tranId;
         readSet_ = new HashMap<>();
@@ -62,8 +60,14 @@ public class SmallBankProcedure implements Callable<Long> {
         args_ = args;
     }
 
+    /**
+     *
+     * @return the execution time
+     * @throws Exception
+     */
     @Override
     public Long call() throws Exception {
+        Long start = System.currentTimeMillis();
         switch(op_) {
             case 1:
                 Amalgamate(args_[0], args_[1]);
@@ -75,7 +79,7 @@ public class SmallBankProcedure implements Callable<Long> {
                 DepositChecking(args_[0], args_[1]);
                 break;
             case 4:
-                TransactSaving(args_[1], args_[1]);
+                TransactSaving(args_[0], args_[1]);
                 break;
             case 5:
                 SendPayment(args_[0], args_[1], args_[2]);
@@ -85,7 +89,8 @@ public class SmallBankProcedure implements Callable<Long> {
                 break;
             default:
         }
-        return null;
+        Long end = System.currentTimeMillis();
+        return end - start;
     }
 
     /**
@@ -186,15 +191,18 @@ public class SmallBankProcedure implements Callable<Long> {
         writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_));
     }
 
-    private void RequestValidate() {
-
+    public void Commit() {
+        String table;
+        int acc = 0;
+        for(String key : writeSet_.keySet()) {
+            String[] args = key.split("_");
+            table = args[0];
+            acc = Integer.parseInt(args[1]);
+            db_.putState(tranId_, table, acc, writeSet_.get(key).getValue_());
+        }
     }
 
-    private void Commit() {
-
-    }
-
-    private void Reset() {
+    public void Reset() {
         readSet_.clear();
         writeSet_.clear();
     }
