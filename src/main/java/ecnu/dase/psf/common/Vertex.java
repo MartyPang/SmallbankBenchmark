@@ -9,6 +9,7 @@ public class Vertex {
     private double weight_; // execution time
     private int inDegree;
     private int outDegree;
+    private int dfNumber;
     private int lowLink;
 
 
@@ -20,6 +21,7 @@ public class Vertex {
         inDegree = 0;
         outDegree = 0;
         lowLink = 0;
+        dfNumber = 0;
     }
 
     /**
@@ -186,6 +188,14 @@ public class Vertex {
 
     public void setLowLink(int lowLink) {
         this.lowLink = lowLink;
+    }
+
+    public int getDfNumber() {
+        return dfNumber;
+    }
+
+    public void setDfNumber(int dfNumber) {
+        this.dfNumber = dfNumber;
     }
 
     public int getInDegree() {

@@ -53,8 +53,9 @@ public class TarjanSCC {
         /**
          * root of the scc
          */
-        boolean isRoot = true;
-        vertex.setLowLink(ts++);
+        //boolean isRoot = true;
+        vertex.setLowLink(ts);
+        vertex.setDfNumber(ts++);
         vertex.visit();
         stack.push(vertex);
 
@@ -63,16 +64,18 @@ public class TarjanSCC {
             Vertex nextV = it.next();
             if(!nextV.isVisited()) {
                 tarjan(nextV);
-            }
-            if(!stack.contains(nextV)) {
                 if(vertex.getLowLink() > nextV.getLowLink()) {
                     vertex.setLowLink(nextV.getLowLink());
-                    isRoot = false;
+                }
+            }
+            else if(stack.contains(nextV)) {
+                if(vertex.getLowLink() > nextV.getDfNumber()) {
+                    vertex.setLowLink(nextV.getDfNumber());
                 }
             }
         }
         //pop one that has lower ts than vertex from stack
-        if(isRoot) {
+        if(vertex.getDfNumber() == vertex.getLowLink()) {
             Map<Integer, Vertex> component = new HashMap<>();
             System.out.println("Before pop: "+stack);
             while(true) {
