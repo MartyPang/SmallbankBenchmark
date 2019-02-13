@@ -22,7 +22,10 @@ public class DB {
 
     public Item getState(String table, int acc) {
         Item value = null;
-        if(table.equals(SmallBankConstants.SAVINGS_TAB)) {
+        if(table.equals(SmallBankConstants.ACCOUNTS_TAB)) {
+            value = account_[acc];
+        }
+        else if(table.equals(SmallBankConstants.SAVINGS_TAB)) {
             value = saving_[acc];
         }else if(table.equals(SmallBankConstants.CHECKINGS_TAB)) {
             value = checking_[acc];

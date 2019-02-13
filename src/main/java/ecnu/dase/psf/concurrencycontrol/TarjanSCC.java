@@ -33,6 +33,7 @@ public class TarjanSCC {
     }
 
     public void runTarjan(DirectedGraph graph) {
+        resetTarjan();
         Collection<Vertex> vertices = graph.getVertices().values();
         for(Vertex v : vertices) {
             if(!v.isVisited()) {
@@ -48,6 +49,7 @@ public class TarjanSCC {
      * @param vertex each node
      */
     private void tarjan(Vertex vertex) {
+        System.out.printf("Tarjan(%d)\n", vertex.getvId_());
         /**
          * root of the scc
          */
@@ -62,14 +64,17 @@ public class TarjanSCC {
             if(!nextV.isVisited()) {
                 tarjan(nextV);
             }
-            if(vertex.getLowLink() > nextV.getLowLink()) {
-                vertex.setLowLink(nextV.getLowLink());
-                isRoot = false;
+            if(!stack.contains(nextV)) {
+                if(vertex.getLowLink() > nextV.getLowLink()) {
+                    vertex.setLowLink(nextV.getLowLink());
+                    isRoot = false;
+                }
             }
         }
         //pop one that has lower ts than vertex from stack
         if(isRoot) {
             Map<Integer, Vertex> component = new HashMap<>();
+            System.out.println("Before pop: "+stack);
             while(true) {
                 Vertex v = stack.pop();
                 component.put(v.getvId_(), v);
@@ -77,6 +82,7 @@ public class TarjanSCC {
                     break;
                 }
             }
+            System.out.println("After pop: "+stack);
             DirectedGraph dg = new DirectedGraph(component);
             scc.add(dg);
         }
@@ -86,6 +92,12 @@ public class TarjanSCC {
         for(DirectedGraph component : scc) {
             System.out.println(component.getVertices().values());
         }
+    }
+
+    private void resetTarjan() {
+        stack.clear();
+        scc.clear();
+        ts = 0;
     }
 
     public List<DirectedGraph> getScc() {

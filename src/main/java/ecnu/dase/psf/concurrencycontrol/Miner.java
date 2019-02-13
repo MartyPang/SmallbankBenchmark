@@ -46,7 +46,9 @@ public class Miner {
             //Execute transactions in parallel
             executeParallel(txs);
             DirectedGraph cg = bocc.constructConflictGraph(txs);
+            cg.printGraph();
             List<Integer> abortSet = bocc.findAbortTransactionSet(cg);
+            System.out.println("abortSet: "+abortSet);
             //remove abort vertex from cg
             for(int vid : abortSet) {
                 cg.removeVertex(vid);
@@ -54,9 +56,12 @@ public class Miner {
             //Get topological order,
             //and commit tx according to the pop order
             Stack<Integer> topology = cg.getTopologicalSort();
+            System.out.println(topology);
             while(!topology.empty()) {
                 int commitId = topology.pop();
                 SmallBankProcedure commitTx = txs.get(commitId);
+                System.out.println(commitTx.getReadSet_());
+                System.out.println(commitTx.getWriteSet_());
                 bocc.commitTransaction(commitTx);
                 //remove from batch
                 txs.remove(commitId);
@@ -67,6 +72,7 @@ public class Miner {
             while(it.hasNext()) {
                 it.next().Reset();
             }
+            System.out.printf("commit: %d\nthreshold: %d\n", bocc.getnCommit(), (int)(commitRatio*batch.size()));
         }
         return bocc.getTdg();
     }
@@ -83,6 +89,10 @@ public class Miner {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void shutdownPool() {
+        pool.shutdown();
     }
 
     public double getCommitRatio() {

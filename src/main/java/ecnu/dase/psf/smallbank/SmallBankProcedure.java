@@ -156,7 +156,7 @@ public class SmallBankProcedure implements Callable<Long> {
         Item bal = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, bal);
 
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB, new Item(bal.getValue_()+amount, tranId_));
+        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
     }
 
     private void TransactSaving(int acc, int amount) {
@@ -168,7 +168,7 @@ public class SmallBankProcedure implements Callable<Long> {
         Item bal = db_.getState(SmallBankConstants.SAVINGS_TAB, acc);
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc, bal);
 
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB, new Item(bal.getValue_()+amount, tranId_));
+        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
     }
 
     private void SendPayment(int acc1, int acc2, int amount) {

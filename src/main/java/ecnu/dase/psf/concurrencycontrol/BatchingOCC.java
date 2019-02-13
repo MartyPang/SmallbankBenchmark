@@ -80,6 +80,7 @@ public class BatchingOCC {
         //Get all SCCs using Tarjan's algorithm
         tarjan.runTarjan(cg);
         List<DirectedGraph> scc = tarjan.getScc();
+        tarjan.printSCC();
         //Need to copy scc and remove irrelevant edges
         List<DirectedGraph> copySCC = new ArrayList<>();
         for(DirectedGraph component : scc) {
@@ -104,8 +105,11 @@ public class BatchingOCC {
         }
         //Run greedy select algorithm
         for(DirectedGraph component : copySCC) {
+            System.out.println("Original scc: ");
+            component.printGraph();
             txSet.addAll(greedySelectVertex(component));
         }
+        System.out.println("Abort: " + txSet);
         return txSet;
     }
 
@@ -130,7 +134,13 @@ public class BatchingOCC {
         //Trim vertex with no incoming or outgoing edge,
         //And run a greedySelectVertex with remaining graph
         component.removeVertex(minVid);
+//        System.out.println("After remove: "+component.getGraphSize());
+        v.add(minVid);
+//        System.out.println("Before trim: ");
+//        component.printGraph();
         component.trimGraph();
+//        System.out.println("After trim: ");
+//        component.printGraph();
         v.addAll(greedySelectVertex(component));
         return v;
     }

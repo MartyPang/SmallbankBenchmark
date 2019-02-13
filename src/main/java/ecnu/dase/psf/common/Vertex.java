@@ -17,6 +17,8 @@ public class Vertex {
         edgeList_ = new LinkedList<>();
         visited_ = false;
         weight_ = 0.0;
+        inDegree = 0;
+        outDegree = 0;
         lowLink = 0;
     }
 
@@ -203,7 +205,7 @@ public class Vertex {
     }
 
     public void printVertex() {
-        System.out.printf("Vertex %d: ", vId_);
+        System.out.printf("Vertex_%d, Out: %d, In: %d\n", vId_, outDegree, inDegree);
         Iterator<Vertex> it = this.getNeighborIterator();
         while(it.hasNext()) {
             System.out.print(it.next().getvId_() + " ");

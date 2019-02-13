@@ -67,21 +67,23 @@ public class DirectedGraph {
         Vertex trimmedV = getNextTrimVertex();
         if(trimmedV != null) {
             removeVertex(trimmedV.getvId_());
+            System.out.printf("Trim vertex %d\n", trimmedV.getvId_());
             trimGraph();
         }
     }
 
     private Vertex getNextTrimVertex() {
-        Vertex vertex = null;
+        Vertex result = null;
         Iterator<Vertex> it = vertices.values().iterator();
         boolean found = false;
         while(!found && it.hasNext()) {
-            vertex = it.next();
+            Vertex vertex = it.next();
             if(vertex.getOutDegree() == 0 || vertex.getInDegree() == 0) {
+                result = vertex;
                 found = true;
             }
         }
-        return vertex;
+        return result;
     }
 
     /**
