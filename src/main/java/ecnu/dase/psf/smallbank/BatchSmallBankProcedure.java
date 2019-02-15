@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
-public class SmallBankProcedure implements Callable<Long> {
+public class BatchSmallBankProcedure implements Callable<Long> {
     /**
      * Batching OCC protocol
      */
@@ -34,6 +34,11 @@ public class SmallBankProcedure implements Callable<Long> {
     private Map<String, Item> writeSet_;
 
     /**
+     * Execution time
+     */
+    private int cost;
+
+    /**
      * operation code
      * 1 --- Amalgamate
      * 2 --- WriteCheck
@@ -47,12 +52,13 @@ public class SmallBankProcedure implements Callable<Long> {
 
 
 
-    public SmallBankProcedure(DB db, int tranId) {
+    public BatchSmallBankProcedure(DB db, int tranId) {
         //global variables
         db_ = db;
         tranId_ = tranId;
         readSet_ = new HashMap<>();
         writeSet_ = new HashMap<>();
+        cost = 0;
     }
 
     public void setParameters(int op, int[] args) {
@@ -67,7 +73,7 @@ public class SmallBankProcedure implements Callable<Long> {
      */
     @Override
     public Long call() throws Exception {
-        Long start = System.currentTimeMillis();
+        Long start = System.nanoTime();
         switch(op_) {
             case 1:
                 Amalgamate(args_[0], args_[1]);
@@ -89,7 +95,7 @@ public class SmallBankProcedure implements Callable<Long> {
                 break;
             default:
         }
-        Long end = System.currentTimeMillis();
+        Long end = System.nanoTime();
         return end - start;
     }
 
@@ -231,11 +237,19 @@ public class SmallBankProcedure implements Callable<Long> {
         this.writeSet_ = writeSet_;
     }
 
+    public int getCost() {
+        return cost;
+    }
+
+    public void setCost(int cost) {
+        this.cost = cost;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SmallBankProcedure that = (SmallBankProcedure) o;
+        BatchSmallBankProcedure that = (BatchSmallBankProcedure) o;
         return tranId_ == that.tranId_;
     }
 

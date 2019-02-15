@@ -39,8 +39,8 @@ public class WorkloadGenerator {
         }
     }
 
-    public Map<Integer, SmallBankProcedure> generateWorkload() {
-        Map<Integer, SmallBankProcedure> workload = new HashMap<>();
+    public Map<Integer, BatchSmallBankProcedure> generateBatchWorkload() {
+        Map<Integer, BatchSmallBankProcedure> workload = new HashMap<>();
         UniformGenerator tx_gen = new UniformGenerator(1, 5);
         UniformGenerator acc_gen = new UniformGenerator(1, numAcc);
         UniformGenerator bal_gen = new UniformGenerator(1, bal);
@@ -71,10 +71,16 @@ public class WorkloadGenerator {
                     args = new int[2];
                     break;
             }
-            SmallBankProcedure transaction = new SmallBankProcedure(db, i);
+            BatchSmallBankProcedure transaction = new BatchSmallBankProcedure(db, i);
             transaction.setParameters(tx, args);
             workload.put(i, transaction);
         }
         return workload;
+    }
+
+    public Map<Integer, DeSmallBankProcedure> transformDeWorkload(Map<Integer, BatchSmallBankProcedure> batchWorkload) {
+        Map<Integer, DeSmallBankProcedure> deWorkload = new HashMap<>();
+
+        return deWorkload;
     }
 }

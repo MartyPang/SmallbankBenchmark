@@ -1,10 +1,12 @@
 package ecnu.dase.psf;
 
+import ecnu.dase.psf.concurrencycontrol.DirectedGraph;
 import ecnu.dase.psf.concurrencycontrol.Miner;
-import ecnu.dase.psf.smallbank.SmallBankProcedure;
+import ecnu.dase.psf.smallbank.BatchSmallBankProcedure;
 import ecnu.dase.psf.smallbank.WorkloadGenerator;
 import ecnu.dase.psf.storage.DB;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -14,12 +16,17 @@ import java.util.Map;
  */
 public class Main {
     public static void main(String[] args) {
-        Miner miner = new Miner();
-        DB db = new DB(15, 10);
-        WorkloadGenerator generator = new WorkloadGenerator(db, 10, 10, 10);
-        Map<Integer, SmallBankProcedure> workload = generator.generateWorkload();
+        Miner miner = new Miner(4, 0.8, 4);
+        DB db = new DB(100000, 10);
+        WorkloadGenerator generator = new WorkloadGenerator(db, 400, 100, 10);
+        Map<Integer, BatchSmallBankProcedure> workload = generator.generateBatchWorkload();
         miner.setBatch(workload);
-        miner.concurrentMining();
+        DirectedGraph tdg = miner.concurrentMining();
+        //tdg.printGraph();
+        List<DirectedGraph> partition = miner.kWayPartition(tdg);
+        for(DirectedGraph part : partition) {
+            System.out.println(part.getGraphWeight());
+        }
         miner.shutdownPool();
     }
 }

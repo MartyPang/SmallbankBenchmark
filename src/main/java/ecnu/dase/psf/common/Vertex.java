@@ -6,7 +6,7 @@ public class Vertex {
     private int vId_; // transaction id
     private List<Edge> edgeList_; // outgoing edge list
     private boolean visited_;
-    private double weight_; // execution time
+    private int weight_; // execution time
     private int inDegree;
     private int outDegree;
     private int dfNumber;
@@ -17,7 +17,18 @@ public class Vertex {
         this.vId_ = vId_;
         edgeList_ = new LinkedList<>();
         visited_ = false;
-        weight_ = 0.0;
+        weight_ = 0;
+        inDegree = 0;
+        outDegree = 0;
+        lowLink = 0;
+        dfNumber = 0;
+    }
+
+    public Vertex(int vId_, int weight_) {
+        this.vId_ = vId_;
+        edgeList_ = new LinkedList<>();
+        visited_ = false;
+        this.weight_ = weight_;
         inDegree = 0;
         outDegree = 0;
         lowLink = 0;
@@ -66,7 +77,7 @@ public class Vertex {
      * @param edgeWeight
      * @return
      */
-    public boolean connect(Vertex endVertex, double edgeWeight){
+    public boolean connect(Vertex endVertex, int edgeWeight){
         boolean result = false;
         if(!this.equals(endVertex)) {
             Iterator<Vertex> it = this.getNeighborIterator();
@@ -106,6 +117,19 @@ public class Vertex {
             }
         }
         return neighbor;
+    }
+
+    public Edge getEdgeById(int toId) {
+        Edge edge = null;
+        Iterator<Edge> it = edgeList_.iterator();
+        while(it.hasNext()) {
+            Edge next = it.next();
+            if(next.getEndVertex().getvId_() == toId) {
+                edge = next;
+                break;
+            }
+        }
+        return edge;
     }
 
     public Vertex getUnvisitedNeighbor() {
@@ -174,11 +198,11 @@ public class Vertex {
         this.edgeList_ = edgeList_;
     }
 
-    public double getWeight_() {
+    public int getWeight_() {
         return weight_;
     }
 
-    public void setWeight_(double weight_) {
+    public void setWeight_(int weight_) {
         this.weight_ = weight_;
     }
 
@@ -215,7 +239,7 @@ public class Vertex {
     }
 
     public void printVertex() {
-        System.out.printf("Vertex_%d, Out: %d, In: %d\n", vId_, outDegree, inDegree);
+        System.out.printf("Vertex_%d, Out: %d, In: %d, Weight: %d\n", vId_, outDegree, inDegree, weight_);
         Iterator<Vertex> it = this.getNeighborIterator();
         while(it.hasNext()) {
             System.out.print(it.next().getvId_() + " ");

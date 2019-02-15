@@ -1,5 +1,7 @@
 package ecnu.dase.psf.concurrencycontrol;
 
+import ecnu.dase.psf.common.Edge;
+import ecnu.dase.psf.common.Item;
 import ecnu.dase.psf.common.Vertex;
 
 import java.util.*;
@@ -21,7 +23,15 @@ public class DirectedGraph {
         vertices.put(tranId, new Vertex(tranId));
     }
 
-    public boolean addEdge(int fromId, int toId, double weight) {
+    public void addVertex(int tranId, int weight) {
+        vertices.put(tranId, new Vertex(tranId, weight));
+    }
+
+    public void addVertex(Vertex v) {
+        vertices.put(v.getvId_(), v);
+    }
+
+    public boolean addEdge(int fromId, int toId, int weight) {
         boolean result = false;
         Vertex fromV = vertices.get(fromId); // Get start vertex
         Vertex toV = vertices.get(toId); // Get end vertex
@@ -37,6 +47,36 @@ public class DirectedGraph {
 
     public boolean addEdge(int fromId, int toId) {
         return addEdge(fromId, toId, 0);
+    }
+
+    public boolean hasEdge(int fromId, int toId) {
+        boolean result = false;
+        Vertex fromV = vertices.get(fromId);
+        Vertex toV = fromV.getNeighborById(toId);
+        if(null != toV) {
+            result = true;
+        }
+        return result;
+    }
+
+    public void updateEdge(int fromId, int toId, String key, Item value) {
+        //Get edge
+        Vertex fromV = vertices.get(fromId);
+        Edge edge = fromV.getEdgeById(toId);
+        if(null != edge) {
+            edge.updateConsistentReadset(key, value);
+        }
+    }
+
+    public List<Edge> getSortedEdges() {
+        List<Edge> edges = new ArrayList<>();
+        Iterator<Vertex> it = vertices.values().iterator();
+        while(it.hasNext()) {
+            Vertex next = it.next();
+            edges.addAll(next.getEdgeList_());
+        }
+        Collections.sort(edges);
+        return edges;
     }
 
     public void removeVertex(int vId) {
@@ -67,7 +107,7 @@ public class DirectedGraph {
         Vertex trimmedV = getNextTrimVertex();
         if(trimmedV != null) {
             removeVertex(trimmedV.getvId_());
-            System.out.printf("Trim vertex %d\n", trimmedV.getvId_());
+            //System.out.printf("Trim vertex %d\n", trimmedV.getvId_());
             trimGraph();
         }
     }
@@ -125,7 +165,15 @@ public class DirectedGraph {
         return vertex;
     }
 
-    public Collection<Integer> getVertexIdSet() {
+    public int getGraphWeight() {
+        int w = 0;
+        for(int key : vertices.keySet()) {
+            w += vertices.get(key).getWeight_();
+        }
+        return w;
+    }
+
+    public Set<Integer> getVertexIdSet() {
         return vertices.keySet();
     }
 

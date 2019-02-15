@@ -49,7 +49,7 @@ public class TarjanSCC {
      * @param vertex each node
      */
     private void tarjan(Vertex vertex) {
-        System.out.printf("Tarjan(%d)\n", vertex.getvId_());
+        //System.out.printf("Tarjan(%d)\n", vertex.getvId_());
         /**
          * root of the scc
          */
@@ -77,7 +77,7 @@ public class TarjanSCC {
         //pop one that has lower ts than vertex from stack
         if(vertex.getDfNumber() == vertex.getLowLink()) {
             Map<Integer, Vertex> component = new HashMap<>();
-            System.out.println("Before pop: "+stack);
+            //System.out.println("Before pop: "+stack);
             while(true) {
                 Vertex v = stack.pop();
                 component.put(v.getvId_(), v);
@@ -85,7 +85,7 @@ public class TarjanSCC {
                     break;
                 }
             }
-            System.out.println("After pop: "+stack);
+            //System.out.println("After pop: "+stack);
             DirectedGraph dg = new DirectedGraph(component);
             scc.add(dg);
         }

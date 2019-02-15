@@ -2,7 +2,7 @@ package ecnu.dase.psf.concurrencycontrol;
 
 import ecnu.dase.psf.common.Item;
 import ecnu.dase.psf.common.Vertex;
-import ecnu.dase.psf.smallbank.SmallBankProcedure;
+import ecnu.dase.psf.smallbank.BatchSmallBankProcedure;
 
 import java.util.*;
 
@@ -23,16 +23,16 @@ public class BatchingOCC {
         tarjan = new TarjanSCC();
     }
 
-    public DirectedGraph constructConflictGraph(Map<Integer, SmallBankProcedure> txs) {
+    public DirectedGraph constructConflictGraph(Map<Integer, BatchSmallBankProcedure> txs) {
         DirectedGraph cg = new DirectedGraph();
         // Add vertex for each transaction
-        for(SmallBankProcedure tx : txs.values()) {
+        for(BatchSmallBankProcedure tx : txs.values()) {
             cg.addVertex(tx.getTranId_());
         }
         Map<Integer, Vertex> vertices = cg.getVertices();
-        for(SmallBankProcedure tx : txs.values()) {
+        for(BatchSmallBankProcedure tx : txs.values()) {
             Map<String, Item> writeSet = tx.getWriteSet_();
-            for(SmallBankProcedure otherTx : txs.values()) {
+            for(BatchSmallBankProcedure otherTx : txs.values()) {
                 if(tx.equals(otherTx)) { //compare with other transaction's read set
                     continue;
                 }
@@ -80,7 +80,7 @@ public class BatchingOCC {
         //Get all SCCs using Tarjan's algorithm
         tarjan.runTarjan(cg);
         List<DirectedGraph> scc = tarjan.getScc();
-        tarjan.printSCC();
+        //tarjan.printSCC();
         //Need to copy scc and remove irrelevant edges
         List<DirectedGraph> copySCC = new ArrayList<>();
         for(DirectedGraph component : scc) {
@@ -105,11 +105,11 @@ public class BatchingOCC {
         }
         //Run greedy select algorithm
         for(DirectedGraph component : copySCC) {
-            System.out.println("Original scc: ");
-            component.printGraph();
+            //System.out.println("Original scc: ");
+            //component.printGraph();
             txSet.addAll(greedySelectVertex(component));
         }
-        System.out.println("Abort: " + txSet);
+        //System.out.println("Abort: " + txSet);
         return txSet;
     }
 
@@ -145,20 +145,28 @@ public class BatchingOCC {
         return v;
     }
 
-    public void commitTransaction(SmallBankProcedure tx) {
+    public void commitTransaction(BatchSmallBankProcedure tx) {
         tx.Commit();
         ++nCommit;
         //add a new vertex to tdg
-        tdg.addVertex(tx.getTranId_());
+        tdg.addVertex(tx.getTranId_(), tx.getCost());
+        System.out.printf("Add vertex %d to tdg.\n", tx.getTranId_());
         //update edges
         Map<String, Item> readSet = tx.getReadSet_();
-        Collection<Item> values = readSet.values();
-        for(Item item : values) {
-            if(tdg.getVertexIdSet().contains(item.getWrittenBy_())) {
+        Set<String> keyset = readSet.keySet();
+        for(String key : keyset) {
+            Item item = readSet.get(key);
+            if(item.getWrittenBy_() != 0 && tdg.getVertexIdSet().contains(item.getWrittenBy_())) {
+//                if(!tdg.hasEdge(item.getWrittenBy_(), tx.getTranId_())) {
+//                }
                 tdg.addEdge(item.getWrittenBy_(), tx.getTranId_());
+                //update edge weight and consistent read set
+                tdg.updateEdge(item.getWrittenBy_(), tx.getTranId_(), key, item);
             }
         }
     }
+
+
 
     public int getnCommit() {
         return nCommit;
