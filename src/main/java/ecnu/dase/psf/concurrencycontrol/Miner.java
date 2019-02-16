@@ -130,7 +130,6 @@ public class Miner {
                     if(index + 1 < k) {
                         ++index;
                     }
-
                 }
                 u.visit();
                 v.visit();

@@ -5,6 +5,7 @@ import java.util.*;
 public class Vertex {
     private int vId_; // transaction id
     private List<Edge> edgeList_; // outgoing edge list
+    private List<Integer> incomingEdge;
     private boolean visited_;
     private int weight_; // execution time
     private int inDegree;
@@ -16,6 +17,7 @@ public class Vertex {
     public Vertex(int vId_) {
         this.vId_ = vId_;
         edgeList_ = new LinkedList<>();
+        incomingEdge = new ArrayList<>();
         visited_ = false;
         weight_ = 0;
         inDegree = 0;
@@ -27,6 +29,7 @@ public class Vertex {
     public Vertex(int vId_, int weight_) {
         this.vId_ = vId_;
         edgeList_ = new LinkedList<>();
+        incomingEdge = new ArrayList<>();
         visited_ = false;
         this.weight_ = weight_;
         inDegree = 0;
@@ -90,6 +93,7 @@ public class Vertex {
             }
             if(!duplicated) {
                 edgeList_.add(new Edge(this, endVertex, edgeWeight));
+                endVertex.addIncomingVertex(vId_);
                 this.increaseDegreeByOne(false);
                 endVertex.increaseDegreeByOne(true);
                 result = true;
@@ -152,6 +156,10 @@ public class Vertex {
 
     }
 
+    public void addIncomingVertex(int incoming) {
+        this.incomingEdge.add(incoming);
+    }
+
     public void increaseDegreeByOne(boolean in) {
         if(in) {
             ++inDegree;
@@ -196,6 +204,14 @@ public class Vertex {
 
     public void setEdgeList_(List<Edge> edgeList_) {
         this.edgeList_ = edgeList_;
+    }
+
+    public List<Integer> getIncomingEdge() {
+        return incomingEdge;
+    }
+
+    public void setIncomingEdge(List<Integer> incomingEdge) {
+        this.incomingEdge = incomingEdge;
     }
 
     public int getWeight_() {

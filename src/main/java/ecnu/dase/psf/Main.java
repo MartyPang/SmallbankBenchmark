@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class Main {
     public static void main(String[] args) {
-        Miner miner = new Miner(4, 0.8, 4);
+        Miner miner = new Miner(4, 0.8, 6);
         DB db = new DB(100000, 10);
         WorkloadGenerator generator = new WorkloadGenerator(db, 400, 100, 10);
         Map<Integer, BatchSmallBankProcedure> workload = generator.generateBatchWorkload();

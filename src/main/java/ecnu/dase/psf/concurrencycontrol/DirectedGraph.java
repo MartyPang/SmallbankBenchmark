@@ -92,7 +92,9 @@ public class DirectedGraph {
                 Iterator<Vertex> neighbors = next.getNeighborIterator();
                 while(neighbors.hasNext()) {
                     //Decrease in-degree by one
-                    neighbors.next().decreaseDegreeByOne(true);
+                    Vertex n = neighbors.next();
+                    n.getIncomingEdge().remove(vId);
+                    n.decreaseDegreeByOne(true);
                 }
             }
         }
