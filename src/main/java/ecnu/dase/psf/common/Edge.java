@@ -1,8 +1,5 @@
 package ecnu.dase.psf.common;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,6 +22,10 @@ public class Edge implements Comparable<Edge> {
         weight += key.length();
         weight += 16; //Item.value
         weight += 16; //Item.getWrittenBy
+    }
+
+    public void resetR() {
+        consistentR.clear();
     }
 
     public Vertex getStartVertex() {
@@ -74,7 +75,7 @@ public class Edge implements Comparable<Edge> {
     }
 
     @Override
-    public int compareTo(@NotNull Edge e) {
+    public int compareTo(Edge e) {
         int result = 0;
         if(weight > e.getWeight()) {
             result = 1;

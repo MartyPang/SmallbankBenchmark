@@ -1,10 +1,10 @@
 package ecnu.dase.psf.smallbank;
 
+import ecnu.dase.psf.concurrencycontrol.DirectedGraph;
 import ecnu.dase.psf.storage.DB;
+import ecnu.dase.psf.storage.HybridDB;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Generate small bank benchmark workload
@@ -78,9 +78,44 @@ public class WorkloadGenerator {
         return workload;
     }
 
-    public Map<Integer, DeSmallBankProcedure> transformDeWorkload(Map<Integer, BatchSmallBankProcedure> batchWorkload) {
-        Map<Integer, DeSmallBankProcedure> deWorkload = new HashMap<>();
+    public List<DeProcedure> transformDeWorkload(Map<Integer, BatchSmallBankProcedure> batchWorkload, HybridDB hdb, List<DirectedGraph> partition, Stack<Integer> topologic) {
+        List<DeProcedure> tasks = new ArrayList<>();
+        List<List<DeSmallBank>> deWorkload = new ArrayList<>();
+        List<Integer> orders = new ArrayList<>();
+        //initialize deWorkload
+        for(int i = 0; i < partition.size(); ++i) {
+            List<DeSmallBank> piece = new ArrayList<>();
+            deWorkload.add(piece);
+        }
+        while(!topologic.empty()) {
+            int tranId = topologic.pop();
+            for(int i = 0; i < partition.size(); ++i) {
+                DirectedGraph subgraph = partition.get(i);
+                if(subgraph.getVertexIdSet().contains(tranId)) {
+                    BatchSmallBankProcedure before = batchWorkload.get(tranId);
+                    DeSmallBank after = new DeSmallBank(hdb, tranId);
+                    after.setParameters(before.getOp_(), before.getArgs_());
+                    deWorkload.get(i).add(after);
+                }
+            }
+        }
+        for(List<DeSmallBank> subtask : deWorkload) {
+            //System.out.println("Subtask size: " + subtask.size());
+            DeProcedure p = new DeProcedure(subtask);
+            tasks.add(p);
+        }
+        return tasks;
+    }
 
-        return deWorkload;
+    public List<SerialProcedure> trandformSerialWorkload(Map<Integer, BatchSmallBankProcedure> batch, DB sdb, Stack<Integer> topologic) {
+        List<SerialProcedure> serialTasks = new ArrayList<>();
+        while(!topologic.empty()) {
+            int tranId = topologic.pop();
+            BatchSmallBankProcedure before = batch.get(tranId);
+            SerialProcedure after = new SerialProcedure(sdb, tranId);
+            after.setParameters(before.getOp_(), before.getArgs_());
+            serialTasks.add(after);
+        }
+        return serialTasks;
     }
 }

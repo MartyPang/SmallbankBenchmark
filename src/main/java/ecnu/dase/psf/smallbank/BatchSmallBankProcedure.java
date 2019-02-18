@@ -8,6 +8,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
+/**
+ * @author MartyPang
+ * @version 1.0
+ * @date 2019/2/13 16:22
+ */
 public class BatchSmallBankProcedure implements Callable<Long> {
     /**
      * Batching OCC protocol
@@ -47,8 +52,8 @@ public class BatchSmallBankProcedure implements Callable<Long> {
      * 5 --- SendPayment
      * 6 --- Commit
      */
-    int op_;
-    int[] args_;
+    private int op_;
+    private int[] args_;
 
 
 
@@ -73,7 +78,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
      */
     @Override
     public Long call() throws Exception {
-        Long start = System.nanoTime();
+        Long start = System.currentTimeMillis();
         switch(op_) {
             case 1:
                 Amalgamate(args_[0], args_[1]);
@@ -95,7 +100,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
                 break;
             default:
         }
-        Long end = System.nanoTime();
+        Long end = System.currentTimeMillis();
         return end - start;
     }
 
@@ -243,6 +248,22 @@ public class BatchSmallBankProcedure implements Callable<Long> {
 
     public void setCost(int cost) {
         this.cost = cost;
+    }
+
+    public int getOp_() {
+        return op_;
+    }
+
+    public void setOp_(int op_) {
+        this.op_ = op_;
+    }
+
+    public int[] getArgs_() {
+        return args_;
+    }
+
+    public void setArgs_(int[] args_) {
+        this.args_ = args_;
     }
 
     @Override

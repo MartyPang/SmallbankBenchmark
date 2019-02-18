@@ -3,10 +3,14 @@ package ecnu.dase.psf.storage;
 import ecnu.dase.psf.common.Item;
 import ecnu.dase.psf.smallbank.SmallBankConstants;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class DB {
     Item[] account_;
     Item[] saving_;
     Item[] checking_;
+
+    ThreadLocalRandom localR = ThreadLocalRandom.current();
 
     public DB(int num_accounts, int balance) {
         account_ = new Item[num_accounts];
@@ -21,6 +25,13 @@ public class DB {
     }
 
     public Item getState(String table, int acc) {
+        //simulate processing time
+        int internal = localR.nextInt()%1500 + 1500;
+        for(int i = 0;i<20;++i){
+            for(int j = 0;j<internal;++j){
+                isPrime(i*j);
+            }
+        }
         Item value = null;
         if(table.equals(SmallBankConstants.ACCOUNTS_TAB)) {
             value = account_[acc];
@@ -34,6 +45,12 @@ public class DB {
     }
 
     public void putState(int writtenBy, String table, int acc, int value) {
+        int internal = localR.nextInt()%1500 + 1500;
+        for(int i = 0;i<20;++i){
+            for(int j = 0;j<internal;++j){
+                isPrime(i*j);
+            }
+        }
         if(table.equals(SmallBankConstants.SAVINGS_TAB)) {
             saving_[acc].setWrittenBy_(writtenBy);
             saving_[acc].setValue_(value);
@@ -41,5 +58,20 @@ public class DB {
             checking_[acc].setWrittenBy_(writtenBy);
             checking_[acc].setValue_(value);
         }
+    }
+
+    public boolean isPrime(int a) {
+        boolean flag = true;
+        if (a < 2) {// 素数不小于2
+            return false;
+        } else {
+            for (int i = 2; i <= Math.sqrt(a); i++) {
+                if (a % i == 0) {// 若能被整除，则说明不是素数，返回false
+                    flag = false;
+                    //break;// 跳出循环
+                }
+            }
+        }
+        return flag;
     }
 }

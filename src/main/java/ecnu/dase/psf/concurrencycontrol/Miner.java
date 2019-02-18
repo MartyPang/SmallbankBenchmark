@@ -51,9 +51,9 @@ public class Miner {
             //Execute transactions in parallel
             executeParallel(txs);
             DirectedGraph cg = bocc.constructConflictGraph(txs);
-            cg.printGraph();
+            //cg.printGraph();
             List<Integer> abortSet = bocc.findAbortTransactionSet(cg);
-            System.out.println("abortSet: "+abortSet);
+            //System.out.println("abortSet: "+abortSet);
             //remove abort vertex from cg
             for(int vid : abortSet) {
                 cg.removeVertex(vid);
@@ -61,12 +61,12 @@ public class Miner {
             //Get topological order,
             //and commit tx according to the pop order
             Stack<Integer> topology = cg.getTopologicalSort();
-            System.out.println(topology);
+            //System.out.println(topology);
             while(!topology.empty()) {
                 int commitId = topology.pop();
                 BatchSmallBankProcedure commitTx = txs.get(commitId);
-                System.out.println(commitTx.getReadSet_());
-                System.out.println(commitTx.getWriteSet_());
+//                System.out.println(commitTx.getReadSet_());
+//                System.out.println(commitTx.getWriteSet_());
                 bocc.commitTransaction(commitTx);
                 //remove from batch
                 txs.remove(commitId);
@@ -77,9 +77,13 @@ public class Miner {
             while(it.hasNext()) {
                 it.next().Reset();
             }
-            System.out.printf("commit: %d threshold: %d\n", bocc.getnCommit(), (int)(commitRatio*batch.size()));
-            bocc.getTdg().printGraph();
-            System.out.println("------------------------END-------------------------");
+            //System.out.printf("commit: %d threshold: %d\n", bocc.getnCommit(), (int)(commitRatio*batch.size()));
+            //bocc.getTdg().printGraph();
+            //System.out.println("------------------------END-------------------------");
+        }
+        //remove abort transactions from batch
+        for(int abort : txs.keySet()) {
+            batch.remove(abort);
         }
         return bocc.getTdg();
     }
@@ -92,12 +96,12 @@ public class Miner {
             Iterator<BatchSmallBankProcedure> it = txs.values().iterator();
             for(Future<Long> f : futureList) {
                 Long execution_time = f.get();
-                System.out.println("execution time: "+execution_time);
+                //System.out.println("execution time: "+execution_time);
                 //Set up the weigh of transactions
                 if(it.hasNext()) {
                     BatchSmallBankProcedure next = it.next();
                     next.setCost(Integer.parseInt(execution_time.toString()));
-                    System.out.println("cost: "+next.getCost());
+                    //System.out.println("cost: "+next.getCost());
                 }
             }
         } catch (Exception e) {
@@ -110,7 +114,7 @@ public class Miner {
         //Calculate weight
         int totalCost = tdg.getGraphWeight();
         int upperBound = totalCost/k;
-        System.out.println("upper bound: "+upperBound);
+        //System.out.println("upper bound: "+upperBound);
         int index = 0;
         int cost = 0;
         for(int i=0;i<k;++i) {
@@ -118,6 +122,7 @@ public class Miner {
             partition.add(part);
         }
         List<Edge> edges = tdg.getSortedEdges();
+        //System.out.println("Edge list: " + edges.size());
         for(Edge e : edges){
             Vertex u = e.getStartVertex();
             Vertex v = e.getEndVertex();
@@ -168,19 +173,26 @@ public class Miner {
         for(int vId : tdg.getVertexIdSet()) {
             Vertex vertex = tdg.getVertices().get(vId);
             if(!vertex.isVisited()) {
+                int tmp = cost;
+                tmp += vertex.getWeight_();
+                if(tmp >= upperBound) {
+                    cost = 0;
+                    if(index + 1 < k) {
+                        ++index;
+                    }
+                }
                 vertex.visit();
                 partition.get(index).addVertex(vertex);
                 cost += vertex.getWeight_();
-                System.out.printf("Add vertex %d to weight %d partition %d\n", vertex.getvId_(), vertex.getWeight_(), index);
-            }
-            if(cost >= upperBound) {
-                cost = 0;
-                if(index + 1 < k) {
-                    ++index;
-                }
+                //System.out.printf("Add vertex %d to weight %d partition %d\n", vertex.getvId_(), vertex.getWeight_(), index);
             }
         }
         return partition;
+    }
+
+    public void reset() {
+        batch.clear();
+        bocc.reset();
     }
 
     public void shutdownPool() {

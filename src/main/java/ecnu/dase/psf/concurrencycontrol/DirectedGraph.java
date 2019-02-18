@@ -93,7 +93,8 @@ public class DirectedGraph {
                 while(neighbors.hasNext()) {
                     //Decrease in-degree by one
                     Vertex n = neighbors.next();
-                    n.getIncomingEdge().remove(vId);
+                    List<Integer> incomingEdges = n.getIncomingEdge();
+                    incomingEdges.remove(incomingEdges.indexOf(vId));
                     n.decreaseDegreeByOne(true);
                 }
             }
@@ -161,7 +162,13 @@ public class DirectedGraph {
         while(!found && it.hasNext()) {
             vertex = it.next();
             if(!vertex.isVisited() && vertex.getUnvisitedNeighbor() == null) {
-                found = true;
+                if(vertex.getUnvisitedNeighbor() == null) {
+                    found = true;
+                }
+                else {
+
+                }
+
             }
         }
         return vertex;
@@ -204,6 +211,11 @@ public class DirectedGraph {
             Vertex v = it.next();
             v.unVisit();
         }
+    }
+
+    public void reset() {
+        vertices.clear();
+        edgeCount = 0;
     }
 
     public int getEdgeCount() {

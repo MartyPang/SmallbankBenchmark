@@ -150,7 +150,7 @@ public class BatchingOCC {
         ++nCommit;
         //add a new vertex to tdg
         tdg.addVertex(tx.getTranId_(), tx.getCost());
-        System.out.printf("Add vertex %d to tdg.\n", tx.getTranId_());
+        //System.out.printf("Add vertex %d to tdg.\n", tx.getTranId_());
         //update edges
         Map<String, Item> readSet = tx.getReadSet_();
         Set<String> keyset = readSet.keySet();
@@ -166,7 +166,10 @@ public class BatchingOCC {
         }
     }
 
-
+    public void reset() {
+        nCommit = 0;
+        tdg.reset();
+    }
 
     public int getnCommit() {
         return nCommit;
