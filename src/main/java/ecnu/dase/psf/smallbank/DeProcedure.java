@@ -36,7 +36,8 @@ public class DeProcedure implements Callable<Long> {
             while(!topo.empty()) {
                 int tranId = topo.pop();
                 DeSmallBank current = allTxs.get(tranId);
-                while(!current.isCommit()) {
+                if(!current.isCommit()){
+
                 }
                 current.Commit();
             }

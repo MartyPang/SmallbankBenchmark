@@ -32,9 +32,9 @@ public class Miner {
         batch = new HashMap<>();
     }
 
-    public Miner(int thread_num, double cr, int k) {
+    public Miner(ExecutorService pool, double cr, int k) {
         bocc = new BatchingOCC();
-        pool = Executors.newFixedThreadPool(thread_num);
+        this.pool = pool;
         commitRatio = cr;
         this.k = k;
         batch = new HashMap<>();

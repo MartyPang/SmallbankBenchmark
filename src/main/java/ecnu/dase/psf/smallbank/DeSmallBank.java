@@ -5,6 +5,9 @@ import ecnu.dase.psf.storage.HybridDB;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author MartyPang
@@ -15,6 +18,10 @@ public class DeSmallBank {
     private int tranId_;
     private HybridDB hdb_;
     private boolean commit;
+    private ReentrantLock lock;
+    private Condition waitCon;
+
+    ThreadLocalRandom localR = ThreadLocalRandom.current();
     /**
      * Consistent read set
      */
@@ -46,6 +53,8 @@ public class DeSmallBank {
         hdb_ = db;
         tranId_ = tranId;
         commit = false;
+        lock = new ReentrantLock();
+        waitCon = lock.newCondition();
         readSet_ = new HashMap<>();
         writeSet_ = new HashMap<>();
     }
@@ -83,7 +92,14 @@ public class DeSmallBank {
         }
         //update consistent read set
         //hdb_.updateR(tranId_, writeSet_);
-        commit = true;
+        lock.lock();
+        try{
+            commit = true;
+            waitCon.signal();
+        }finally {
+            lock.unlock();
+        }
+
         return null;
     }
 
@@ -110,8 +126,8 @@ public class DeSmallBank {
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        writeSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_));
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_));
     }
 
     /**
@@ -135,9 +151,9 @@ public class DeSmallBank {
 
         // write check, add penality if overdraft
         if(total < amount) {
-            writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_));
         }else {
-            writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_));
         }
     }
 
@@ -150,7 +166,7 @@ public class DeSmallBank {
         Item bal = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, bal);
 
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
     }
 
     private void TransactSaving(int acc, int amount) {
@@ -162,7 +178,7 @@ public class DeSmallBank {
         Item bal = hdb_.getState(tranId_, SmallBankConstants.SAVINGS_TAB, acc);
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc, bal);
 
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
     }
 
     private void SendPayment(int acc1, int acc2, int amount) {
@@ -181,8 +197,8 @@ public class DeSmallBank {
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        writeSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_));
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_));
     }
     public void Commit() {
         String table;
@@ -191,8 +207,18 @@ public class DeSmallBank {
             String[] args = key.split("_");
             table = args[0];
             acc = Integer.parseInt(args[1]);
-            hdb_.putState(tranId_, table, acc, writeSet_.get(key).getValue_());
+            //hdb_.putState(tranId_, table, acc, writeSet_.get(key).getValue_());
         }
+    }
+
+    public void deferredWrite(String key, Item item) {
+        int internal = localR.nextInt()%1500 + 1500;
+        for(int i = 0;i<20;++i){
+            for(int j = 0;j<internal;++j){
+                isPrime(i*j);
+            }
+        }
+        writeSet_.put(key, item);
     }
 
     public int getTranId_() {
@@ -236,7 +262,32 @@ public class DeSmallBank {
     }
 
     public boolean isCommit() {
+        lock.lock();
+        try{
+            while(!commit) {
+                waitCon.await();
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
         return commit;
+    }
+
+    public boolean isPrime(int a) {
+        boolean flag = true;
+        if (a < 2) {// 素数不小于2
+            return false;
+        } else {
+            for (int i = 2; i <= Math.sqrt(a); i++) {
+                if (a % i == 0) {// 若能被整除，则说明不是素数，返回false
+                    flag = false;
+                    // break;// 跳出循环
+                }
+            }
+        }
+        return flag;
     }
 
     public void setCommit(boolean commit) {

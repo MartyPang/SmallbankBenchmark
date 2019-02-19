@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author MartyPang
@@ -55,6 +56,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
     private int op_;
     private int[] args_;
 
+    ThreadLocalRandom localR = ThreadLocalRandom.current();
 
 
     public BatchSmallBankProcedure(DB db, int tranId) {
@@ -127,8 +129,8 @@ public class BatchSmallBankProcedure implements Callable<Long> {
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        writeSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_));
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_));
     }
 
     /**
@@ -152,9 +154,9 @@ public class BatchSmallBankProcedure implements Callable<Long> {
 
         // write check, add penality if overdraft
         if(total < amount) {
-            writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_));
         }else {
-            writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_));
         }
     }
 
@@ -167,7 +169,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
         Item bal = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, bal);
 
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
     }
 
     private void TransactSaving(int acc, int amount) {
@@ -179,7 +181,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
         Item bal = db_.getState(SmallBankConstants.SAVINGS_TAB, acc);
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc, bal);
 
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
     }
 
     private void SendPayment(int acc1, int acc2, int amount) {
@@ -198,8 +200,18 @@ public class BatchSmallBankProcedure implements Callable<Long> {
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        writeSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_));
-        writeSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_));
+    }
+
+    public void deferredWrite(String key, Item item) {
+        int internal = localR.nextInt()%1500 + 1500;
+        for(int i = 0;i<20;++i){
+            for(int j = 0;j<internal;++j){
+                isPrime(i*j);
+            }
+        }
+        writeSet_.put(key, item);
     }
 
     public void Commit() {
@@ -209,13 +221,28 @@ public class BatchSmallBankProcedure implements Callable<Long> {
             String[] args = key.split("_");
             table = args[0];
             acc = Integer.parseInt(args[1]);
-            db_.putState(tranId_, table, acc, writeSet_.get(key).getValue_());
+            //db_.putState(tranId_, table, acc, writeSet_.get(key).getValue_());
         }
     }
 
     public void Reset() {
         readSet_.clear();
         writeSet_.clear();
+    }
+
+    public boolean isPrime(int a) {
+        boolean flag = true;
+        if (a < 2) {// 素数不小于2
+            return false;
+        } else {
+            for (int i = 2; i <= Math.sqrt(a); i++) {
+                if (a % i == 0) {// 若能被整除，则说明不是素数，返回false
+                    flag = false;
+                    // break;// 跳出循环
+                }
+            }
+        }
+        return flag;
     }
 
     public int getTranId_() {

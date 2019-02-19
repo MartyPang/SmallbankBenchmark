@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -22,13 +21,12 @@ public class Validator {
     private List<DeProcedure> tasks;
     private Map<Integer, DeSmallBank> allTasks;
 
-    public Validator(int thread_num) {
-        pool = Executors.newFixedThreadPool(thread_num);
+    public Validator(ExecutorService pool) {
+        this.pool = pool;
     }
 
     public void concurrentValidate() {
         List<Future<Long>> futureList;
-        List<Future<Long>> f2;
         try {
             futureList = pool.invokeAll(tasks, 1, TimeUnit.MINUTES);
             for(Future<Long> f : futureList) {

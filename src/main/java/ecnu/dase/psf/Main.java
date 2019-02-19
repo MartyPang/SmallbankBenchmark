@@ -11,6 +11,8 @@ import ecnu.dase.psf.storage.HybridDB;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author MartyPang
@@ -20,31 +22,64 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) {
         int threadNum;
+        int accNum;
+        int transactionNum;
+        int k;
         if(0 == args.length) {
             threadNum = 4;
+            accNum = 400;
+            transactionNum = 400;
+            k = threadNum;
         }
         else if(1 == args.length) {
             threadNum = Integer.parseInt(args[0]);
+            accNum = 400;
+            transactionNum = 400;
+            k = threadNum;
+        }
+        else if(2 == args.length) {
+            threadNum = Integer.parseInt(args[0]);
+            accNum = Integer.parseInt(args[1]);
+            transactionNum = 400;
+            k = threadNum;
+        }
+        else if(3 == args.length) {
+            threadNum = Integer.parseInt(args[0]);
+            accNum = Integer.parseInt(args[1]);
+            transactionNum = Integer.parseInt(args[2]);
+            k = threadNum;
+        }
+        else if(4 == args.length) {
+            threadNum = Integer.parseInt(args[0]);
+            accNum = Integer.parseInt(args[1]);
+            transactionNum = Integer.parseInt(args[2]);
+            k = Integer.parseInt(args[3]);
         }
         else {
             threadNum = 4;
+            accNum = 400;
+            transactionNum = 400;
+            k = threadNum;
         }
-        Miner miner = new Miner(threadNum, 0.8, threadNum);
-        Validator validator = new Validator(threadNum);
+        System.out.println(threadNum);
+        ExecutorService pool = Executors.newFixedThreadPool(threadNum);
+        Miner miner = new Miner(pool, 0.8, k);
+        Validator validator = new Validator(pool);
         SerialRunner serial = new SerialRunner();
         int timeM = 0;
         int timeV = 0;
         int timeS = 0;
-        for(int i = 0; i < 10; ++i) {
+        for(int i = 0; i < 5; ++i) {
             miner.reset();
             DB dbMiner = new DB(100000, 10);
-            WorkloadGenerator generator = new WorkloadGenerator(dbMiner, 400, 1000, 10);
+            WorkloadGenerator generator = new WorkloadGenerator(dbMiner, transactionNum, accNum, 10);
             Map<Integer, BatchSmallBankProcedure> workloadM= generator.generateBatchWorkload();
             miner.setBatch(workloadM);
             Long startM = System.currentTimeMillis();
             DirectedGraph tdg = miner.concurrentMining();
             List<DirectedGraph> partition = miner.kWayPartition(tdg);
             Long endM = System.currentTimeMillis();
+            //System.out.println((endM - startM) + " " + (endM2 - endM));
             if(i != 0) {
                 timeM += (endM - startM);
             }
@@ -89,8 +124,8 @@ public class Main {
         miner.shutdownPool();
         validator.shutdownPool();
         serial.shutdownPool();
-        System.out.println("Miner: " + timeM/9);
-        System.out.println("Validator: " + timeV/9);
-        System.out.println("Serial: " + timeS/9);
+        System.out.println("Miner: " + timeM/4);
+        System.out.println("Validator: " + timeV/4);
+        System.out.println("Serial: " + timeS/4);
     }
 }
