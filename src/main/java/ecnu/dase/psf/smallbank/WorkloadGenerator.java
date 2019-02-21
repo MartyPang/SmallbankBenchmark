@@ -42,8 +42,91 @@ public class WorkloadGenerator {
     /**
      * Zipfian Distribution
      */
-    private class ZipfGenerator {
+//    private class ZipfGenerator {
+//        private Random rnd = new Random(System.currentTimeMillis());
+//        private int size;
+//        private double skew;
+//        private double bottom = 0;
+//
+//        public ZipfGenerator(int size, double skew) {
+//            this.size = size;
+//            this.skew = skew;
+//
+//            for(int i=1;i < size; i++) {
+//                this.bottom += (1/Math.pow(i, this.skew));
+//            }
+//        }
+//
+//        // the next() method returns an random rank id.
+//        // The frequency of returned rank ids are follows Zipf distribution.
+//        public int next() {
+//            int rank;
+//            double friquency = 0;
+//            double dice;
+//
+//            rank = rnd.nextInt(size);
+//            friquency = (1.0d / Math.pow(rank, this.skew)) / this.bottom;
+//            dice = rnd.nextDouble();
+//
+//            while(!(dice <= friquency)) {
+//                rank = rnd.nextInt(size);
+//                friquency = (1.0d / Math.pow(rank, this.skew)) / this.bottom;
+//                dice = rnd.nextDouble();
+//            }
+//
+//            return rank+1;
+//        }
+//
+//        // This method returns a probability that the given rank occurs.
+//        public double getProbability(int rank) {
+//            return (1.0d / Math.pow(rank, this.skew)) / this.bottom;
+//        }
+//    }
 
+    public class ZipfGenerator {
+        private Random random = new Random(System.currentTimeMillis());
+        private NavigableMap<Double, Integer> map;
+        private static final double Constant = 1.0;
+
+        public ZipfGenerator(int R, double F) {
+            // create the TreeMap
+            map = computeMap(R, F);
+        }
+        //size为rank个数，skew为数据倾斜程度, 取值为0表示数据无倾斜，取值越大倾斜程度越高
+        private NavigableMap<Double, Integer> computeMap(
+                int size, double skew) {
+            NavigableMap<Double, Integer> map =
+                    new TreeMap<Double, Integer>();
+            //总频率
+            double div = 0;
+            //对每个rank，计算对应的词频，计算总词频
+            for (int i = 1; i <= size; i++) {
+                //the frequency in position i
+                div += (Constant / Math.pow(i, skew));
+            }
+            //计算每个rank对应的y值，所以靠前rank的y值区间远比后面rank的y值区间大
+            double sum = 0;
+            for (int i = 1; i <= size; i++) {
+                double p = (Constant / Math.pow(i, skew)) / div;
+                sum += p;
+                map.put(sum, i - 1);
+            }
+            return map;
+        }
+
+        public int next() {         // [1,n]
+            double value = random.nextDouble();
+            //找最近y值对应的rank
+            return map.ceilingEntry(value).getValue() + 1;
+        }
+
+    }
+
+    public void testZipf() {
+        ZipfGenerator zipf = new ZipfGenerator(1000, 1);
+        for(int i=0;i<100;++i) {
+            System.out.println(zipf.next());
+        }
     }
 
     public Map<Integer, BatchSmallBankProcedure> generateBatchWorkload() {
