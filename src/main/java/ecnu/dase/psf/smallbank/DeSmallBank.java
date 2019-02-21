@@ -5,6 +5,7 @@ import ecnu.dase.psf.storage.HybridDB;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version 1.0
  * @date 2019/2/14 10:40
  */
-public class DeSmallBank {
+public class DeSmallBank implements Callable<Long> {
     private int tranId_;
     private HybridDB hdb_;
     private boolean commit;
@@ -48,6 +49,7 @@ public class DeSmallBank {
      */
     int op_;
     int[] args_;
+    int[] randoms_;
 
     public DeSmallBank(HybridDB db, int tranId) {
         hdb_ = db;
@@ -59,9 +61,10 @@ public class DeSmallBank {
         writeSet_ = new HashMap<>();
     }
 
-    public void setParameters(int op, int[] args) {
+    public void setParameters(int op, int[] args, int[] randoms) {
         op_ = op;
         args_ = args;
+        randoms_ = randoms;
     }
 
     /**
@@ -92,14 +95,20 @@ public class DeSmallBank {
         }
         //update consistent read set
         //hdb_.updateR(tranId_, writeSet_);
-        lock.lock();
-        try{
-            commit = true;
-            waitCon.signal();
-        }finally {
-            lock.unlock();
-        }
+//        lock.lock();
+//        try{
+//            commit = true;
+//            waitCon.signal();
+//        }finally {
+//            lock.unlock();
+//        }
 
+        return null;
+    }
+
+    @Override
+    public Long call() throws Exception {
+        run();
         return null;
     }
 
@@ -112,22 +121,22 @@ public class DeSmallBank {
      */
     private void Amalgamate(int acc1, int acc2) {
         // get accounts
-        Item acc_1 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc1);
-        Item acc_2 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc2);
+        Item acc_1 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc1, randoms_[0]);
+        Item acc_2 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc2, randoms_[1]);
         // add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc1, acc_1);
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc2, acc_2);
 
-        Item bal1 = hdb_.getState(tranId_, SmallBankConstants.SAVINGS_TAB, acc1);
-        Item bal2 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2);
+        Item bal1 = hdb_.getState(tranId_, SmallBankConstants.SAVINGS_TAB, acc1, randoms_[2]);
+        Item bal2 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2, randoms_[3]);
         int total = bal1.getValue_()+bal2.getValue_();
         // add to read set
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, bal1);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_));
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_), randoms_[4]);
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_), randoms_[5]);
     }
 
     /**
@@ -138,12 +147,12 @@ public class DeSmallBank {
      */
     private void WriteCheck(int acc, int amount) {
         // get account
-        Item acc_ = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc);
+        Item acc_ = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc, randoms_[0]);
         //add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc, acc_);
 
-        Item bal1 = hdb_.getState(tranId_, SmallBankConstants.SAVINGS_TAB, acc);
-        Item bal2 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc);
+        Item bal1 = hdb_.getState(tranId_, SmallBankConstants.SAVINGS_TAB, acc, randoms_[1]);
+        Item bal2 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, randoms_[2]);
         int total = bal1.getValue_() + bal2.getValue_();
         // add to read set
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc, bal1);
@@ -151,54 +160,54 @@ public class DeSmallBank {
 
         // write check, add penality if overdraft
         if(total < amount) {
-            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_), randoms_[3]);
         }else {
-            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_), randoms_[3]);
         }
     }
 
     private void DepositChecking(int acc, int amount) {
         // get account
-        Item acc_ = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc);
+        Item acc_ = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc, randoms_[0]);
         //add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc, acc_);
 
-        Item bal = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc);
+        Item bal = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, randoms_[1]);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, bal);
 
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_), randoms_[2]);
     }
 
     private void TransactSaving(int acc, int amount) {
         // get account
-        Item acc_ = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc);
+        Item acc_ = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc, randoms_[0]);
         //add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc, acc_);
 
-        Item bal = hdb_.getState(tranId_, SmallBankConstants.SAVINGS_TAB, acc);
+        Item bal = hdb_.getState(tranId_, SmallBankConstants.SAVINGS_TAB, acc, randoms_[1]);
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc, bal);
 
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_), randoms_[2]);
     }
 
     private void SendPayment(int acc1, int acc2, int amount) {
         // get accounts
-        Item acc_1 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc1);
-        Item acc_2 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc2);
+        Item acc_1 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc1, randoms_[0]);
+        Item acc_2 = hdb_.getState(tranId_, SmallBankConstants.ACCOUNTS_TAB, acc2, randoms_[1]);
         // add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc1, acc_1);
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc2, acc_2);
 
         // get checking balance
-        Item bal1 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc1);
-        Item bal2 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2);
+        Item bal1 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc1, randoms_[2]);
+        Item bal2 = hdb_.getState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2, randoms_[3]);
         // add to read set
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, bal1);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_));
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_), randoms_[4]);
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_), randoms_[5]);
     }
     public void Commit() {
         String table;
@@ -211,8 +220,7 @@ public class DeSmallBank {
         }
     }
 
-    public void deferredWrite(String key, Item item) {
-        int internal = localR.nextInt()%1500 + 1500;
+    public void deferredWrite(String key, Item item, int internal) {
         for(int i = 0;i<20;++i){
             for(int j = 0;j<internal;++j){
                 isPrime(i*j);

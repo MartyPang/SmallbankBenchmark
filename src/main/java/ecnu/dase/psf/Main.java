@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author MartyPang
@@ -68,6 +70,7 @@ public class Main {
         SerialRunner serial = new SerialRunner();
         int timeM = 0;
         int timeV = 0;
+        int timeV2 = 0;
         int timeS = 0;
         for(int i = 0; i < 5; ++i) {
             miner.reset();
@@ -83,8 +86,8 @@ public class Main {
             if(i != 0) {
                 timeM += (endM - startM);
             }
-            //System.out.println("Miner execution time: " + (endM -startM));
-            //System.out.println("---------------------------------------------");
+//            System.out.println("Miner execution time: " + (endM -startM));
+//            System.out.println("---------------------------------------------");
 
             validator.reset();
             DB dbVal = new DB(100000, 10);
@@ -107,8 +110,24 @@ public class Main {
             if(i != 0) {
                 timeV += (endV - startV);
             }
-            //System.out.println("Validator execution time: " + (endV - startV));
-           // System.out.println("---------------------------------------------");
+//            System.out.println("Validator execution time: " + (endV - startV));
+//            System.out.println("---------------------------------------------");
+
+            //without partition
+            Long startV2 = System.currentTimeMillis();
+            List<Future<Long>> futureList;
+            try {
+                futureList = pool.invokeAll(allTx.values(), 1, TimeUnit.MINUTES);
+                for(Future<Long> f : futureList) {
+                    f.get();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            Long endV2 = System.currentTimeMillis();
+            if(i != 0) {
+                timeV2 += (endV2 - startV2);
+            }
 
             DB dbSerial = new DB(100000, 10);
             List<SerialProcedure> workloadS = generator.trandformSerialWorkload(miner.getBatch(), dbSerial, tdg.getTopologicalSort());
@@ -119,13 +138,14 @@ public class Main {
             if(i != 0) {
                 timeS += (endS - startS);
             }
-            //System.out.println("Serial execution time: " + (endS - startS));
+//            System.out.println("Serial execution time: " + (endS - startS));
         }
         miner.shutdownPool();
         validator.shutdownPool();
         serial.shutdownPool();
         System.out.println("Miner: " + timeM/4);
         System.out.println("Validator: " + timeV/4);
+        System.out.println("Validator V2: " + timeV2/4);
         System.out.println("Serial: " + timeS/4);
     }
 }

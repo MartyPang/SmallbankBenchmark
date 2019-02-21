@@ -55,6 +55,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
      */
     private int op_;
     private int[] args_;
+    private int[] randoms;
 
     ThreadLocalRandom localR = ThreadLocalRandom.current();
 
@@ -65,6 +66,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
         tranId_ = tranId;
         readSet_ = new HashMap<>();
         writeSet_ = new HashMap<>();
+        randoms = new int[10];
         cost = 0;
     }
 
@@ -83,18 +85,33 @@ public class BatchSmallBankProcedure implements Callable<Long> {
         Long start = System.currentTimeMillis();
         switch(op_) {
             case 1:
+                for(int i = 0; i < 6; ++i) {
+                    randoms[i] = localR.nextInt()%1500 + 1500;
+                }
                 Amalgamate(args_[0], args_[1]);
                 break;
             case 2:
+                for(int i = 0; i < 4; ++i) {
+                    randoms[i] = localR.nextInt()%1500 + 1500;
+                }
                 WriteCheck(args_[0], args_[1]);
                 break;
             case 3:
+                for(int i = 0; i < 3; ++i) {
+                    randoms[i] = localR.nextInt()%1500 + 1500;
+                }
                 DepositChecking(args_[0], args_[1]);
                 break;
             case 4:
+                for(int i = 0; i < 3; ++i) {
+                    randoms[i] = localR.nextInt()%1500 + 1500;
+                }
                 TransactSaving(args_[0], args_[1]);
                 break;
             case 5:
+                for(int i = 0; i < 6; ++i) {
+                    randoms[i] = localR.nextInt()%1500 + 1500;
+                }
                 SendPayment(args_[0], args_[1], args_[2]);
                 break;
             case 6:
@@ -115,22 +132,22 @@ public class BatchSmallBankProcedure implements Callable<Long> {
      */
     private void Amalgamate(int acc1, int acc2) {
         // get accounts
-        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1);
-        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2);
+        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1, randoms[0]);
+        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2, randoms[1]);
         // add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc1, acc_1);
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc2, acc_2);
 
-        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc1);
-        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2);
+        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc1, randoms[2]);
+        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2, randoms[3]);
         int total = bal1.getValue_()+bal2.getValue_();
         // add to read set
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, bal1);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_));
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(0, tranId_), randoms[4]);
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(total, tranId_), randoms[5]);
     }
 
     /**
@@ -141,12 +158,12 @@ public class BatchSmallBankProcedure implements Callable<Long> {
      */
     private void WriteCheck(int acc, int amount) {
         // get account
-        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc);
+        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc, randoms[0]);
         //add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc, acc_);
 
-        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc);
-        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc);
+        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc, randoms[1]);
+        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc, randoms[2]);
         int total = bal1.getValue_() + bal2.getValue_();
         // add to read set
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc, bal1);
@@ -154,58 +171,57 @@ public class BatchSmallBankProcedure implements Callable<Long> {
 
         // write check, add penality if overdraft
         if(total < amount) {
-            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount - 1, tranId_), randoms[3]);
         }else {
-            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_));
+            deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(amount, tranId_), randoms[3]);
         }
     }
 
     private void DepositChecking(int acc, int amount) {
         // get account
-        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc);
+        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc, randoms[0]);
         //add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc, acc_);
 
-        Item bal = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc);
+        Item bal = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc, randoms[1]);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc, bal);
 
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_), randoms[2]);
     }
 
     private void TransactSaving(int acc, int amount) {
         // get account
-        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc);
+        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc, randoms[0]);
         //add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc, acc_);
 
-        Item bal = db_.getState(SmallBankConstants.SAVINGS_TAB, acc);
+        Item bal = db_.getState(SmallBankConstants.SAVINGS_TAB, acc, randoms[1]);
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc, bal);
 
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc, new Item(bal.getValue_()+amount, tranId_), randoms[2]);
     }
 
     private void SendPayment(int acc1, int acc2, int amount) {
         // get accounts
-        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1);
-        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2);
+        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1, randoms[0]);
+        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2, randoms[1]);
         // add to read set
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc1, acc_1);
         readSet_.put(SmallBankConstants.ACCOUNTS_TAB+"_"+acc2, acc_2);
 
         // get checking balance
-        Item bal1 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc1);
-        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2);
+        Item bal1 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc1, randoms[2]);
+        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2, randoms[3]);
         // add to read set
         readSet_.put(SmallBankConstants.SAVINGS_TAB+"_"+acc1, bal1);
         readSet_.put(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, bal2);
 
         // add to write set
-        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_));
-        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_));
+        deferredWrite(SmallBankConstants.SAVINGS_TAB+"_"+acc1, new Item(bal1.getValue_()-amount, tranId_), randoms[4]);
+        deferredWrite(SmallBankConstants.CHECKINGS_TAB+"_"+acc2, new Item(bal2.getValue_()+amount, tranId_), randoms[5]);
     }
 
-    public void deferredWrite(String key, Item item) {
-        int internal = localR.nextInt()%1500 + 1500;
+    public void deferredWrite(String key, Item item, int internal) {
         for(int i = 0;i<20;++i){
             for(int j = 0;j<internal;++j){
                 isPrime(i*j);
@@ -221,7 +237,7 @@ public class BatchSmallBankProcedure implements Callable<Long> {
             String[] args = key.split("_");
             table = args[0];
             acc = Integer.parseInt(args[1]);
-            //db_.putState(tranId_, table, acc, writeSet_.get(key).getValue_());
+            db_.putState(tranId_, table, acc, writeSet_.get(key).getValue_());
         }
     }
 
@@ -291,6 +307,14 @@ public class BatchSmallBankProcedure implements Callable<Long> {
 
     public void setArgs_(int[] args_) {
         this.args_ = args_;
+    }
+
+    public int[] getRandoms() {
+        return randoms;
+    }
+
+    public void setRandoms(int[] randoms) {
+        this.randoms = randoms;
     }
 
     @Override

@@ -31,6 +31,7 @@ public class Validator {
             futureList = pool.invokeAll(tasks, 1, TimeUnit.MINUTES);
             for(Future<Long> f : futureList) {
                 f.get();
+                //System.out.println("Execution time: " + f.get());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -66,7 +67,7 @@ public class Validator {
         commit.setCommit(true);
         commit.setTopo(topologic);
         commit.setAllTxs(allTasks);
-        tasks.add(commit);
+        //tasks.add(commit);
     }
 
     public void setAllTasks(Map<Integer, DeSmallBank> allTasks) {

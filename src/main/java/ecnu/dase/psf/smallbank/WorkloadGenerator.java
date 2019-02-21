@@ -39,6 +39,13 @@ public class WorkloadGenerator {
         }
     }
 
+    /**
+     * Zipfian Distribution
+     */
+    private class ZipfGenerator {
+
+    }
+
     public Map<Integer, BatchSmallBankProcedure> generateBatchWorkload() {
         Map<Integer, BatchSmallBankProcedure> workload = new HashMap<>();
         UniformGenerator tx_gen = new UniformGenerator(1, 5);
@@ -94,7 +101,7 @@ public class WorkloadGenerator {
                 if(subgraph.getVertexIdSet().contains(tranId)) {
                     BatchSmallBankProcedure before = batchWorkload.get(tranId);
                     DeSmallBank after = new DeSmallBank(hdb, tranId);
-                    after.setParameters(before.getOp_(), before.getArgs_());
+                    after.setParameters(before.getOp_(), before.getArgs_(), before.getRandoms());
                     deWorkload.get(i).add(after);
                 }
             }
@@ -113,7 +120,7 @@ public class WorkloadGenerator {
             int tranId = topologic.pop();
             BatchSmallBankProcedure before = batch.get(tranId);
             SerialProcedure after = new SerialProcedure(sdb, tranId);
-            after.setParameters(before.getOp_(), before.getArgs_());
+            after.setParameters(before.getOp_(), before.getArgs_(), before.getRandoms());
             serialTasks.add(after);
         }
         return serialTasks;

@@ -22,6 +22,7 @@ public class Edge implements Comparable<Edge> {
         weight += key.length();
         weight += 16; //Item.value
         weight += 16; //Item.getWrittenBy
+        //System.out.println("update R" + weight);
     }
 
     public void resetR() {

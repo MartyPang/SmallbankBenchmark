@@ -68,6 +68,7 @@ public class Miner {
 //                System.out.println(commitTx.getReadSet_());
 //                System.out.println(commitTx.getWriteSet_());
                 bocc.commitTransaction(commitTx);
+                batch.get(commitId).setRandoms(commitTx.getRandoms());
                 //remove from batch
                 txs.remove(commitId);
             }

@@ -182,6 +182,18 @@ public class DirectedGraph {
         return w;
     }
 
+    public  int getGraphEdgeWeight() {
+        int totalWeight = 0;
+        Iterator<Vertex> it = vertices.values().iterator();
+        while(it.hasNext()) {
+            Vertex next = it.next();
+            for(Edge e : next.getEdgeList_()) {
+                totalWeight += e.getWeight();
+            }
+        }
+        return  totalWeight;
+    }
+
     public Set<Integer> getVertexIdSet() {
         return vertices.keySet();
     }

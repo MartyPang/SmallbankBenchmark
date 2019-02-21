@@ -32,6 +32,7 @@ public class DeProcedure implements Callable<Long> {
 
     @Override
     public Long call() throws Exception {
+        Long start = System.currentTimeMillis();
         if(isCommit) {
             while(!topo.empty()) {
                 int tranId = topo.pop();
@@ -47,8 +48,8 @@ public class DeProcedure implements Callable<Long> {
                 sub.run();
             }
         }
-
-        return null;
+        Long end =  System.currentTimeMillis();
+        return end - start;
     }
 
     public List<DeSmallBank> getTasks() {

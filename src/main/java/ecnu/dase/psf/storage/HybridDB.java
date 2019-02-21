@@ -7,7 +7,6 @@ import ecnu.dase.psf.concurrencycontrol.DirectedGraph;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author MartyPang
@@ -18,14 +17,13 @@ public class HybridDB {
     private DB db_;
     private DirectedGraph tdg_;
 
-    ThreadLocalRandom localR = ThreadLocalRandom.current();
 
     public HybridDB(DB db, DirectedGraph tdg) {
         db_ = db;
         tdg_ = tdg;
     }
 
-    public Item getState(int tranId, String table, int acc) {
+    public Item getState(int tranId, String table, int acc, int internal) {
         Item value = null;
         //check consistent read set of tranId
         Vertex v = tdg_.getVertices().get(tranId);
@@ -48,10 +46,9 @@ public class HybridDB {
         //if not in R,
         //then get state from local db
         if(!found) {
-            value = db_.getState(table, acc);
+            value = db_.getState(table, acc, internal);
         }
         else {
-            int internal = localR.nextInt()%1500 + 1500;
             for(int i = 0;i<20;++i){
                 for(int j = 0;j<internal;++j){
                     isPrime(i*j);
@@ -62,7 +59,7 @@ public class HybridDB {
     }
 
     public void putState(int writtenBy, String table, int acc, int value) {
-        db_.putState(writtenBy, table, acc, value);
+        //db_.putState(writtenBy, table, acc, value);
     }
 
 

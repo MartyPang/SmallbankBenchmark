@@ -25,15 +25,17 @@ public class SerialProcedure implements Callable<Long> {
      */
     private int op_;
     private int[] args_;
+    private int[] randoms_;
 
     public SerialProcedure(DB db, int tranId) {
         db_ = db;
         tranId_ = tranId;
     }
 
-    public void setParameters(int op, int[] args) {
+    public void setParameters(int op, int[] args, int[] randoms) {
         op_ = op;
         args_ = args;
+        randoms_ = randoms;
     }
 
     @Override
@@ -70,15 +72,15 @@ public class SerialProcedure implements Callable<Long> {
      */
     private void Amalgamate(int acc1, int acc2) {
         // get accounts
-        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1);
-        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2);
+        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1,randoms_[0]);
+        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2, randoms_[1]);
 
-        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc1);
-        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2);
+        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc1, randoms_[2]);
+        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2, randoms_[3]);
         int total = bal1.getValue_()+bal2.getValue_();
 
-        db_.putState(tranId_, SmallBankConstants.SAVINGS_TAB, acc1, 0);
-        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2, total);
+        db_.putState(tranId_, SmallBankConstants.SAVINGS_TAB, acc1, 0, randoms_[4]);
+        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2, total, randoms_[5]);
     }
 
     /**
@@ -89,47 +91,47 @@ public class SerialProcedure implements Callable<Long> {
      */
     private void WriteCheck(int acc, int amount) {
         // get account
-        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc);
+        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc, randoms_[0]);
 
-        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc);
-        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc);
+        Item bal1 = db_.getState(SmallBankConstants.SAVINGS_TAB, acc, randoms_[1]);
+        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc, randoms_[2]);
         int total = bal1.getValue_() + bal2.getValue_();
 
         // write check, add penality if overdraft
         if(total < amount) {
-            db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, amount-1);
+            db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, amount-1, randoms_[3]);
         }else {
-            db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, amount);
+            db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, amount, randoms_[3]);
         }
     }
 
     private void DepositChecking(int acc, int amount) {
         // get account
-        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc);
-        Item bal = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc);
+        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc, randoms_[0]);
+        Item bal = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc, randoms_[1]);
 
-        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, bal.getValue_()+amount);
+        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, bal.getValue_()+amount, randoms_[2]);
     }
 
     private void TransactSaving(int acc, int amount) {
         // get account
-        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc);
-        Item bal = db_.getState(SmallBankConstants.SAVINGS_TAB, acc);
+        Item acc_ = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc, randoms_[0]);
+        Item bal = db_.getState(SmallBankConstants.SAVINGS_TAB, acc, randoms_[1]);
 
-        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, bal.getValue_()+amount);
+        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc, bal.getValue_()+amount, randoms_[2]);
     }
 
     private void SendPayment(int acc1, int acc2, int amount) {
         // get accounts
-        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1);
-        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2);
+        Item acc_1 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc1, randoms_[0]);
+        Item acc_2 = db_.getState(SmallBankConstants.ACCOUNTS_TAB, acc2, randoms_[1]);
 
         // get checking balance
-        Item bal1 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc1);
-        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2);
+        Item bal1 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc1, randoms_[2]);
+        Item bal2 = db_.getState(SmallBankConstants.CHECKINGS_TAB, acc2, randoms_[3]);
 
-        db_.putState(tranId_, SmallBankConstants.SAVINGS_TAB, acc1, bal1.getValue_()-amount);
-        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2, bal2.getValue_()+amount);
+        db_.putState(tranId_, SmallBankConstants.SAVINGS_TAB, acc1, bal1.getValue_()-amount, randoms_[4]);
+        db_.putState(tranId_, SmallBankConstants.CHECKINGS_TAB, acc2, bal2.getValue_()+amount, randoms_[5]);
     }
 
     public int getTranId_() {

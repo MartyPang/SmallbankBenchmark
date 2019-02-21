@@ -24,9 +24,8 @@ public class DB {
         }
     }
 
-    public Item getState(String table, int acc) {
+    public Item getState(String table, int acc, int internal) {
         //simulate processing time
-        int internal = localR.nextInt()%1500 + 1500;
         for(int i = 0;i<20;++i){
             for(int j = 0;j<internal;++j){
                 isPrime(i*j);
@@ -44,13 +43,22 @@ public class DB {
         return value;
     }
 
-    public void putState(int writtenBy, String table, int acc, int value) {
-        int internal = localR.nextInt()%1500 + 1500;
+    public void putState(int writtenBy, String table, int acc, int value, int internal) {
         for(int i = 0;i<20;++i){
             for(int j = 0;j<internal;++j){
                 isPrime(i*j);
             }
         }
+        if(table.equals(SmallBankConstants.SAVINGS_TAB)) {
+            saving_[acc].setWrittenBy_(writtenBy);
+            saving_[acc].setValue_(value);
+        }else if(table.equals(SmallBankConstants.CHECKINGS_TAB)) {
+            checking_[acc].setWrittenBy_(writtenBy);
+            checking_[acc].setValue_(value);
+        }
+    }
+
+    public void putState(int writtenBy, String table, int acc, int value) {
         if(table.equals(SmallBankConstants.SAVINGS_TAB)) {
             saving_[acc].setWrittenBy_(writtenBy);
             saving_[acc].setValue_(value);
