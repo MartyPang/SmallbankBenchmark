@@ -27,41 +27,55 @@ public class Main {
         int accNum;
         int transactionNum;
         int k;
+        double skew;
         if(0 == args.length) {
             threadNum = 4;
             accNum = 400;
             transactionNum = 400;
             k = threadNum;
+            skew = 0.0; //uniform distribution
         }
         else if(1 == args.length) {
             threadNum = Integer.parseInt(args[0]);
             accNum = 400;
             transactionNum = 400;
             k = threadNum;
+            skew = 0.0; //uniform distribution
         }
         else if(2 == args.length) {
             threadNum = Integer.parseInt(args[0]);
             accNum = Integer.parseInt(args[1]);
             transactionNum = 400;
             k = threadNum;
+            skew = 0.0; //uniform distribution
         }
         else if(3 == args.length) {
             threadNum = Integer.parseInt(args[0]);
             accNum = Integer.parseInt(args[1]);
             transactionNum = Integer.parseInt(args[2]);
             k = threadNum;
+            skew = 0.0; //uniform distribution
         }
         else if(4 == args.length) {
             threadNum = Integer.parseInt(args[0]);
             accNum = Integer.parseInt(args[1]);
             transactionNum = Integer.parseInt(args[2]);
             k = Integer.parseInt(args[3]);
+            skew = 0.0; //uniform distribution
+        }
+        else if(5 == args.length) {
+            threadNum = Integer.parseInt(args[0]);
+            accNum = Integer.parseInt(args[1]);
+            transactionNum = Integer.parseInt(args[2]);
+            k = Integer.parseInt(args[3]);
+            skew = Double.parseDouble(args[4]);
         }
         else {
             threadNum = 4;
             accNum = 400;
             transactionNum = 400;
             k = threadNum;
+            skew = 0.0;
         }
         System.out.println(threadNum);
         ExecutorService pool = Executors.newFixedThreadPool(threadNum);
@@ -75,7 +89,7 @@ public class Main {
         for(int i = 0; i < 5; ++i) {
             miner.reset();
             DB dbMiner = new DB(100000, 10);
-            WorkloadGenerator generator = new WorkloadGenerator(dbMiner, transactionNum, accNum, 10);
+            WorkloadGenerator generator = new WorkloadGenerator(dbMiner, transactionNum, accNum, 10, skew);
             Map<Integer, BatchSmallBankProcedure> workloadM= generator.generateBatchWorkload();
             miner.setBatch(workloadM);
             Long startM = System.currentTimeMillis();
@@ -117,7 +131,7 @@ public class Main {
             Long startV2 = System.currentTimeMillis();
             List<Future<Long>> futureList;
             try {
-                futureList = pool.invokeAll(allTx.values(), 1, TimeUnit.MINUTES);
+                futureList = pool.invokeAll(allTx.values(), 5, TimeUnit.MINUTES);
                 for(Future<Long> f : futureList) {
                     f.get();
                 }

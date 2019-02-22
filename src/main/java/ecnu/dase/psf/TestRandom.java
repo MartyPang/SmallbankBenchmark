@@ -3,8 +3,6 @@ package ecnu.dase.psf;
 import ecnu.dase.psf.smallbank.WorkloadGenerator;
 import ecnu.dase.psf.storage.DB;
 
-import java.util.Random;
-
 /**
  * @author MartyPang
  * @version 1.0
@@ -20,7 +18,7 @@ public class TestRandom {
 //        }
 
         DB db = new DB(1000, 10);
-        WorkloadGenerator generator = new WorkloadGenerator(db, 400, 1000, 10);
+        WorkloadGenerator generator = new WorkloadGenerator(db, 400, 1000, 10, 0.99);
         generator.testZipf();
     }
 }

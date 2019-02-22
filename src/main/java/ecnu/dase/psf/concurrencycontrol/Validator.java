@@ -28,7 +28,7 @@ public class Validator {
     public void concurrentValidate() {
         List<Future<Long>> futureList;
         try {
-            futureList = pool.invokeAll(tasks, 1, TimeUnit.MINUTES);
+            futureList = pool.invokeAll(tasks, 5, TimeUnit.MINUTES);
             for(Future<Long> f : futureList) {
                 f.get();
                 //System.out.println("Execution time: " + f.get());

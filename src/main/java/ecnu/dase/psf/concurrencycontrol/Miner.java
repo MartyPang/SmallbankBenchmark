@@ -93,7 +93,7 @@ public class Miner {
         List<Future<Long>> futureList;
 
         try{
-            futureList = pool.invokeAll(txs.values(), 1, TimeUnit.MINUTES);
+            futureList = pool.invokeAll(txs.values(), 5, TimeUnit.MINUTES);
             Iterator<BatchSmallBankProcedure> it = txs.values().iterator();
             for(Future<Long> f : futureList) {
                 Long execution_time = f.get();

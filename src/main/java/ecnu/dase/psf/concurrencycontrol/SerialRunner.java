@@ -24,7 +24,7 @@ public class SerialRunner {
     public void serialExecute() {
         List<Future<Long>> futureList;
         try {
-            futureList = serialPool.invokeAll(serialTasks, 1, TimeUnit.MINUTES);
+            futureList = serialPool.invokeAll(serialTasks, 5, TimeUnit.MINUTES);
             for(Future<Long> f : futureList) {
                 f.get();
             }

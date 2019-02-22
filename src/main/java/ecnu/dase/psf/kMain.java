@@ -20,14 +20,17 @@ import java.util.concurrent.Executors;
 public class kMain {
     public static void main(String[] args) {
         int threadNum = 16;
-        int accNum = 100;
+        int accNum = 500;
         int transactionNum = 400;
         int k;
+        double skew;
         if(0 == args.length) {
             k = 4;
+            skew = 0.99;
         }
         else {
             k = Integer.parseInt(args[0]);
+            skew = Double.parseDouble(args[1]);
         }
         ExecutorService pool = Executors.newFixedThreadPool(threadNum);
         Miner miner = new Miner(pool, 0.8, k);
@@ -36,7 +39,7 @@ public class kMain {
         for(int i = 0; i < 10; ++i) {
             miner.reset();
             DB db = new DB(100000, 10);
-            WorkloadGenerator generator = new WorkloadGenerator(db, transactionNum, accNum, 10);
+            WorkloadGenerator generator = new WorkloadGenerator(db, transactionNum, accNum, 10, skew);
             Map<Integer, BatchSmallBankProcedure> workload = generator.generateBatchWorkload();
             miner.setBatch(workload);
             DirectedGraph tdg = miner.concurrentMining();
